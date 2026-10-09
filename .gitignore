@@ -1,0 +1,6 @@
+build/
+fabric/user_design/
+fabric/Test/build/
+fabric/.FABulous/.fabulous_history
+__pycache__/
+*.vvp

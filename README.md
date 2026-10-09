@@ -1,4 +1,4 @@
-# agfpga — own eFPGA fabric, phase 0: emulation on Versal
+# HERCOSS FPGA — own eFPGA fabric, phase 0: emulation on Versal
 
 Goal: an ASIC SoC (own RV32IM + IP cores + **own FPGA fabric**). Phase 0 builds the
 fabric with [FABulous](https://github.com/FPGA-Research/FABulous) and runs it *inside*

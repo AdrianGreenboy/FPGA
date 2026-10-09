@@ -11,7 +11,7 @@
         "FABulous": 1,
         "dynports": 1,
         "top": 1,
-        "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:24.1-74.10"
+        "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:24.1-74.10"
       },
       "parameter_default_values": {
         "NoConfigBits": 4
@@ -43,7 +43,7 @@
             "WIDTH": 4
           },
           "attributes": {
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:42.5-44.8"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:42.5-44.8"
           },
           "port_directions": {
             "CLK": "input",
@@ -63,7 +63,7 @@
           },
           "attributes": {
             "module_not_derived": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:47.15-52.6"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:47.15-52.6"
           },
           "connections": {
             "A0": [ 2 ],
@@ -79,7 +79,7 @@
           },
           "attributes": {
             "module_not_derived": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:54.15-59.6"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:54.15-59.6"
           },
           "connections": {
             "A0": [ 3 ],
@@ -95,7 +95,7 @@
           },
           "attributes": {
             "module_not_derived": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:61.15-66.6"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:61.15-66.6"
           },
           "connections": {
             "A0": [ 4 ],
@@ -111,7 +111,7 @@
           },
           "attributes": {
             "module_not_derived": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:68.15-73.6"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:68.15-73.6"
           },
           "connections": {
             "A0": [ 5 ],
@@ -126,7 +126,7 @@
           "hide_name": 1,
           "bits": [ 2, 3, 4, 5 ],
           "attributes": {
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:42.5-44.8"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:42.5-44.8"
           }
         },
         "ConfigBits": {
@@ -135,7 +135,7 @@
           "attributes": {
             "FABulous": 1,
             "GLOBAL": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:34.62-34.72"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:34.62-34.72"
           }
         },
         "I": {
@@ -144,21 +144,21 @@
           "attributes": {
             "EXTERNAL": 1,
             "FABulous": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:27.47-27.48"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:27.47-27.48"
           }
         },
         "O": {
           "hide_name": 0,
           "bits": [ 6, 7, 8, 9 ],
           "attributes": {
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:28.23-28.24"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:28.23-28.24"
           }
         },
         "Q": {
           "hide_name": 0,
           "bits": [ 15, 16, 17, 18 ],
           "attributes": {
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:40.15-40.16"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:40.15-40.16"
           }
         },
         "UserCLK": {
@@ -168,7 +168,7 @@
             "EXTERNAL": 1,
             "FABulous": 1,
             "SHARED_PORT": 1,
-            "src": "/home/claude/efpga/agfpga/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:32.16-32.23"
+            "src": "/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v:32.16-32.23"
           }
         }
       }

@@ -27,16 +27,20 @@ ID_EXPECTED = 0xEF0A0001
 
 
 class Efpga:
+    # Register access MUST be one 32-bit load/store: struct.pack_into() writes byte by
+    # byte (4 AXI writes with 1-byte WSTRB), which the wrapper counts as 4 CFG_DATA words.
+    # memoryview.cast("I") item access compiles to a single 32-bit access.
     def __init__(self, base: int):
         self.fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
         self.mm = mmap.mmap(self.fd, 0x1000, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE,
                             offset=base)
+        self.w = memoryview(self.mm).cast("I")
 
     def rd(self, name: str) -> int:
-        return struct.unpack_from("<I", self.mm, REG[name])[0]
+        return self.w[REG[name] >> 2]
 
     def wr(self, name: str, value: int) -> None:
-        struct.pack_into("<I", self.mm, REG[name], value & 0xFFFFFFFF)
+        self.w[REG[name] >> 2] = value & 0xFFFFFFFF
 
     def wait_not(self, bit: int, timeout_s: float = 1.0) -> None:
         t0 = time.monotonic()

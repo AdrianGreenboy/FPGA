@@ -39,8 +39,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,DSP_bot_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/DSP/DSP_bot/DSP_bot_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/DSP/DSP_bot/DSP_bot_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/DSP/DSP_bot/DSP_bot_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/DSP/DSP_bot/DSP_bot_switch_matrix.list
 RelX,148
 RelY,12
 Width,152
@@ -3240,7 +3240,7 @@ RelY,64
 
 BEL
 Name,MULADD
-Src,/home/claude/efpga/efpga_v0/Tile/DSP/DSP_bot/MULADD.v
+Src,/home/adrian/FPGA/fabric/Tile/DSP/DSP_bot/MULADD.v
 RelX,308
 RelY,16
 Width,32
@@ -7316,8 +7316,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,DSP_top_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/DSP/DSP_top/DSP_top_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/DSP/DSP_top/DSP_top_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/DSP/DSP_top/DSP_top_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/DSP/DSP_top/DSP_top_switch_matrix.list
 RelX,148
 RelY,12
 Width,152
@@ -13274,8 +13274,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,LUT4AB_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4AB_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4AB_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4AB_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4AB_switch_matrix.list
 RelX,121
 RelY,8
 Width,152
@@ -16531,7 +16531,7 @@ RelY,191
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,12
 Width,32
@@ -16611,7 +16611,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,33
 Width,32
@@ -16691,7 +16691,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,54
 Width,32
@@ -16771,7 +16771,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,75
 Width,32
@@ -16851,7 +16851,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,96
 Width,32
@@ -16931,7 +16931,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,117
 Width,32
@@ -17011,7 +17011,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,138
 Width,32
@@ -17091,7 +17091,7 @@ RelY,12
 
 BEL
 Name,LUT4c_frame_config_dffesr
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/LUT4c_frame_config_dffesr.v
 RelX,281
 RelY,159
 Width,32
@@ -17171,7 +17171,7 @@ RelY,12
 
 BEL
 Name,MUX8LUT_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/LUT4AB/MUX8LUT_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/LUT4AB/MUX8LUT_frame_config_mux.v
 RelX,281
 RelY,180
 Width,32
@@ -20902,8 +20902,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,N_term_DSP_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/N_term_DSP/N_term_DSP_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/N_term_DSP/N_term_DSP_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/N_term_DSP/N_term_DSP_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/N_term_DSP/N_term_DSP_switch_matrix.list
 RelX,148
 RelY,9
 Width,152
@@ -22684,8 +22684,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,N_term_RAM_IO_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/N_term_RAM_IO/N_term_RAM_IO_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/N_term_RAM_IO/N_term_RAM_IO_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/N_term_RAM_IO/N_term_RAM_IO_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/N_term_RAM_IO/N_term_RAM_IO_switch_matrix.list
 RelX,88
 RelY,41
 Width,112
@@ -23922,8 +23922,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,N_term_single_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/N_term_single/N_term_single_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/N_term_single/N_term_single_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/N_term_single/N_term_single_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/N_term_single/N_term_single_switch_matrix.list
 RelX,121
 RelY,8
 Width,152
@@ -25721,8 +25721,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,N_term_single2_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/N_term_single2/N_term_single2_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/N_term_single2/N_term_single2_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/N_term_single2/N_term_single2_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/N_term_single2/N_term_single2_switch_matrix.list
 RelX,120
 RelY,9
 Width,152
@@ -27503,8 +27503,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,RAM_IO_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/RAM_IO_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/RAM_IO/RAM_IO_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/RAM_IO_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/RAM_IO/RAM_IO_switch_matrix.list
 RelX,88
 RelY,12
 Width,112
@@ -29640,7 +29640,7 @@ RelY,171
 
 BEL
 Name,InPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/InPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v
 RelX,208
 RelY,16
 Width,32
@@ -29712,7 +29712,7 @@ RelY,7
 
 BEL
 Name,InPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/InPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v
 RelX,208
 RelY,32
 Width,32
@@ -29784,7 +29784,7 @@ RelY,7
 
 BEL
 Name,InPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/InPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v
 RelX,208
 RelY,48
 Width,32
@@ -29856,7 +29856,7 @@ RelY,7
 
 BEL
 Name,InPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/InPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/InPass4_frame_config_mux.v
 RelX,208
 RelY,64
 Width,32
@@ -29928,7 +29928,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,80
 Width,32
@@ -30000,7 +30000,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,96
 Width,32
@@ -30072,7 +30072,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,112
 Width,32
@@ -30144,7 +30144,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,128
 Width,32
@@ -30216,7 +30216,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,144
 Width,32
@@ -30288,7 +30288,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,160
 Width,32
@@ -30360,7 +30360,7 @@ RelY,7
 
 BEL
 Name,OutPass4_frame_config_mux
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/OutPass4_frame_config_mux.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/OutPass4_frame_config_mux.v
 RelX,208
 RelY,176
 Width,32
@@ -30432,7 +30432,7 @@ RelY,7
 
 BEL
 Name,Config_access
-Src,/home/claude/efpga/efpga_v0/Tile/RAM_IO/Config_access.v
+Src,/home/adrian/FPGA/fabric/Tile/RAM_IO/Config_access.v
 RelX,208
 RelY,192
 Width,32
@@ -32777,8 +32777,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,RegFile_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/RegFile/RegFile_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/RegFile/RegFile_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/RegFile/RegFile_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/RegFile/RegFile_switch_matrix.list
 RelX,120
 RelY,40
 Width,152
@@ -35522,7 +35522,7 @@ RelY,35
 
 BEL
 Name,RegFile_32x4
-Src,/home/claude/efpga/efpga_v0/Tile/RegFile/RegFile_32x4.v
+Src,/home/adrian/FPGA/fabric/Tile/RegFile/RegFile_32x4.v
 RelX,280
 RelY,44
 Width,32
@@ -38911,8 +38911,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,S_term_DSP_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/S_term_DSP/S_term_DSP_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/S_term_DSP/S_term_DSP_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/S_term_DSP/S_term_DSP_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/S_term_DSP/S_term_DSP_switch_matrix.list
 RelX,148
 RelY,9
 Width,152
@@ -40693,8 +40693,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,S_term_RAM_IO_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/S_term_RAM_IO/S_term_RAM_IO_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/S_term_RAM_IO/S_term_RAM_IO_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/S_term_RAM_IO/S_term_RAM_IO_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/S_term_RAM_IO/S_term_RAM_IO_switch_matrix.list
 RelX,88
 RelY,41
 Width,112
@@ -41931,8 +41931,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,S_term_single_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/S_term_single/S_term_single_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/S_term_single/S_term_single_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/S_term_single/S_term_single_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/S_term_single/S_term_single_switch_matrix.list
 RelX,121
 RelY,8
 Width,152
@@ -43738,8 +43738,8 @@ Height,145
 
 SWITCH_MATRIX
 Name,S_term_single2_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/S_term_single2/S_term_single2_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/S_term_single2/S_term_single2_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/S_term_single2/S_term_single2_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/S_term_single2/S_term_single2_switch_matrix.list
 RelX,120
 RelY,9
 Width,152
@@ -45520,8 +45520,8 @@ Height,320
 
 SWITCH_MATRIX
 Name,W_IO_switch_matrix
-Src,/home/claude/efpga/efpga_v0/Tile/W_IO/W_IO_switch_matrix.v
-Csv,/home/claude/efpga/efpga_v0/Tile/W_IO/W_IO_switch_matrix.list
+Src,/home/adrian/FPGA/fabric/Tile/W_IO/W_IO_switch_matrix.v
+Csv,/home/adrian/FPGA/fabric/Tile/W_IO/W_IO_switch_matrix.list
 RelX,16
 RelY,140
 Width,112
@@ -46377,7 +46377,7 @@ RelY,27
 
 BEL
 Name,IO_1_bidirectional_frame_config_pass
-Src,/home/claude/efpga/efpga_v0/Tile/W_IO/IO_1_bidirectional_frame_config_pass.v
+Src,/home/adrian/FPGA/fabric/Tile/W_IO/IO_1_bidirectional_frame_config_pass.v
 RelX,136
 RelY,144
 Width,32
@@ -46441,7 +46441,7 @@ RelY,6
 
 BEL
 Name,IO_1_bidirectional_frame_config_pass
-Src,/home/claude/efpga/efpga_v0/Tile/W_IO/IO_1_bidirectional_frame_config_pass.v
+Src,/home/adrian/FPGA/fabric/Tile/W_IO/IO_1_bidirectional_frame_config_pass.v
 RelX,136
 RelY,160
 Width,32
@@ -46505,7 +46505,7 @@ RelY,6
 
 BEL
 Name,Config_access
-Src,/home/claude/efpga/efpga_v0/Tile/W_IO/Config_access.v
+Src,/home/adrian/FPGA/fabric/Tile/W_IO/Config_access.v
 RelX,136
 RelY,176
 Width,32
@@ -46545,7 +46545,7 @@ RelY,7
 
 BEL
 Name,Config_access
-Src,/home/claude/efpga/efpga_v0/Tile/W_IO/Config_access.v
+Src,/home/adrian/FPGA/fabric/Tile/W_IO/Config_access.v
 RelX,136
 RelY,192
 Width,32

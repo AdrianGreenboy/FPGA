@@ -4,3 +4,10 @@ fabric/Test/build/
 fabric/.FABulous/.fabulous_history
 __pycache__/
 *.vvp
+.Xil/
+*.jou
+*.log
+*.str
+.repo.yaml
+.venv/
+tools/

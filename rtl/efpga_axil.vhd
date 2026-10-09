@@ -16,6 +16,9 @@
 --   0x0C CFG_DATA  WO  one bitstream word (MSB-first as in the .bin). The write
 --                      response is held until the SelfWrite sequence is finished,
 --                      so software can stream words back-to-back without polling.
+--                      Only full 32-bit writes (WSTRB=1111) are accepted; a partial
+--                      write is answered with SLVERR and NOT forwarded/counted
+--                      (silicon lesson: Python struct.pack_into() writes byte-wise).
 --   0x10 CFG_COUNT RO  words written since the last CFG_RESET
 --   0x14 IO_IN     RW  [15:0] fabric inputs  (O_top)
 --   0x18 IO_OUT    RO  [15:0] fabric outputs (I_top), masked while CFG_MODE=1
@@ -25,6 +28,7 @@
 --   0x28 IO_PULSE  RW  write: [15:0] MASK, [31:16] COUNT -> fabric inputs are
 --                      IO_IN | MASK for exactly COUNT rising edges of aclk, then
 --                      back to IO_IN. Ignored while busy or in CFG_MODE.
+--                      Partial writes (WSTRB/=1111) -> SLVERR, ignored.
 --                      read : [15:0] MASK, [31:16] remaining count
 --                      Gives cycle-exact stimulus from software (e.g. "enable the
 --                      design for exactly N clocks"), so silicon results can be
@@ -112,6 +116,7 @@ architecture rtl of efpga_axil is
     signal awready_r  : std_logic := '0';
     signal wready_r   : std_logic := '0';
     signal bvalid_r   : std_logic := '0';
+    signal bresp_r    : std_logic_vector(1 downto 0) := "00";
     signal aw_addr    : std_logic_vector(7 downto 0) := (others => '0');
     signal aw_seen    : std_logic := '0';
     signal w_data     : std_logic_vector(31 downto 0) := (others => '0');
@@ -162,7 +167,7 @@ begin
     s_axi_awready <= awready_r;
     s_axi_wready  <= wready_r;
     s_axi_bvalid  <= bvalid_r;
-    s_axi_bresp   <= "00";
+    s_axi_bresp   <= bresp_r;
 
     p_write : process (aclk)
         variable v_addr : std_logic_vector(7 downto 0);
@@ -173,6 +178,7 @@ begin
 
             if aresetn = '0' then
                 wr_state  <= WR_IDLE;
+                bresp_r   <= "00";
                 aw_seen   <= '0';
                 w_seen    <= '0';
                 bvalid_r  <= '0';
@@ -216,6 +222,7 @@ begin
                             w_seen   <= '0';
                             v_addr   := aw_addr(7 downto 2) & "00";
                             wr_state <= WR_RESP;
+                            bresp_r  <= "00";
                             case v_addr is
                                 when x"04" =>
                                     if w_strb(0) = '1' then
@@ -227,16 +234,22 @@ begin
                                         end if;
                                     end if;
                                 when x"0C" =>
-                                    -- bitstream word: start the SelfWrite sequence
-                                    sw_data  <= w_data;
-                                    seq_cnt  <= (others => '0');
-                                    cfg_busy <= '1';
-                                    wr_state <= WR_CFG;
+                                    if w_strb = "1111" then
+                                        -- bitstream word: start the SelfWrite sequence
+                                        sw_data  <= w_data;
+                                        seq_cnt  <= (others => '0');
+                                        cfg_busy <= '1';
+                                        wr_state <= WR_CFG;
+                                    else
+                                        bresp_r <= "10";    -- SLVERR: partial word
+                                    end if;
                                 when x"14" =>
                                     if w_strb(0) = '1' then io_in_r(7 downto 0)  <= w_data(7 downto 0);  end if;
                                     if w_strb(1) = '1' then io_in_r(15 downto 8) <= w_data(15 downto 8); end if;
                                 when x"28" =>
-                                    if pulse_cnt = 0 and cfg_mode = '0' and w_strb = "1111" then
+                                    if w_strb /= "1111" then
+                                        bresp_r <= "10";        -- SLVERR: partial word
+                                    elsif pulse_cnt = 0 and cfg_mode = '0' then
                                         pulse_mask <= w_data(15 downto 0);
                                         pulse_cnt  <= unsigned(w_data(31 downto 16));
                                     end if;

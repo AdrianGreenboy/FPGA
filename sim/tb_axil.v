@@ -46,6 +46,12 @@ module tb_axil;
 
     // ---------------- AXI4-Lite master (AW and W issued together) -------------
     task axi_write(input [7:0] a, input [31:0] d, input [3:0] s);
+        begin
+            axi_write_resp(a, d, s, 2'b00);
+        end
+    endtask
+
+    task axi_write_resp(input [7:0] a, input [31:0] d, input [3:0] s, input [1:0] exp_resp);
         reg aw_done, w_done;
         begin
             @(posedge aclk);
@@ -59,7 +65,10 @@ module tb_axil;
             while (!bvalid) @(posedge aclk);
             @(posedge aclk);
             bready <= 1'b0;
-            if (bresp !== 2'b00) begin $display("  FAIL bresp=%b", bresp); errors = errors + 1; end
+            if (bresp !== exp_resp) begin
+                $display("  FAIL addr %h strb %b: bresp=%b expected %b", a, s, bresp, exp_resp);
+                errors = errors + 1;
+            end
         end
     endtask
 
@@ -194,6 +203,20 @@ module tb_axil;
         axi_write(8'h20, 32'h0000_5500, 4'b0010);
         axi_read(8'h20, r);  check("SCRATCH byte strobe", r, 32'hDEAD55EF);
         axi_read(8'h08, r);  check("STATUS after reset (isolated)", r, 32'h2);
+
+        // partial writes to CFG_DATA / IO_PULSE: SLVERR, nothing forwarded
+        // (silicon lesson: Python struct.pack_into() issues byte-wise AXI writes)
+        axi_write(8'h04, 32'h0000_0003, 4'hF);                      // CFG_RESET, count = 0
+        repeat (12) @(posedge aclk);
+        for (k = 0; k < 4; k = k + 1)
+            axi_write_resp(8'h0C, 32'hFAB0_FAB1, 4'b0001 << k, 2'b10);
+        axi_write_resp(8'h0C, 32'hFAB0_FAB1, 4'b0011, 2'b10);
+        axi_read(8'h10, r);  check("CFG_COUNT after partials", r, 32'h0);
+        check("no strobe from partials", {31'h0, dut.sw_strobe}, 32'h0);
+        axi_write(8'h04, 32'h0000_0000, 4'hF);                      // live
+        axi_write_resp(8'h28, {16'd100, 16'h0002}, 4'b0011, 2'b10);
+        axi_read(8'h28, r);  check("IO_PULSE partial ignored", r, 32'h0);
+        $display("[strobes ] partial CFG_DATA / IO_PULSE writes -> SLVERR, not forwarded");
 
         configure(0, len_a, "A counter14");  exercise(0, "A counter14");
         configure(1, len_b, "B lfsr14   ");  exercise(1, "B lfsr14   ");

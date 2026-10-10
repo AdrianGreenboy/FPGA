@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Shim: emulate `yosys -y <script.py> [-Q|-q] -- <args...>` using the pyosys
+# pip wheel, for pip-installed LibreLane without a python-enabled yosys binary.
+# LibreLane's pyosys steps honour _LLN_OVERRIDE_YOSYS - point it at this file.
+set -euo pipefail
+script=""
+args=()
+expect_script=0
+for a in "$@"; do
+    case "$a" in
+        -y) expect_script=1 ;;
+        -Q|-q) ;;
+        --) if [[ -n "$script" && ${#args[@]} -eq 0 ]]; then :; else args+=("$a"); fi ;;
+        *)  if [[ $expect_script -eq 1 && -z "$script" ]]; then script="$a"; else args+=("$a"); fi ;;
+    esac
+done
+[[ -n "$script" ]] || { echo "yosys-pyosys: no -y <script> given" >&2; exit 2; }
+exec python3 "$script" "${args[@]}"

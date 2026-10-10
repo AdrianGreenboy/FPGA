@@ -272,6 +272,44 @@ realistically high-double/low-triple-digit MHz after layout — far above the
 Versal emulation (which is routing-hop-limited by construction) and below a
 300 MHz user clock, which stays out of reach at 130 nm.
 
+## GDS hardening flow (FABulous -> LibreLane, IHP SG13G2)
+
+`scripts/asic_gds_setup.sh` prepares the full RTL-to-GDS flow (run it, install
+whatever it flags as missing, re-run). Three facts worth knowing before the
+first run, all discovered the hard way:
+
+- **LibreLane is installed via pip, not nix**, so the PnR tools come from the
+  system: verilator/klayout/magic from apt, netgen built from source, openroad
+  from the prebuilt .deb (Precision-Innovations GitHub releases), and
+  `pip install pyosys` inside the venv.
+- LibreLane's synthesis steps invoke **`yosys -y` (python-enabled yosys)**,
+  which neither the venv's yowasp wrapper nor a stock yosys build supports.
+  `scripts/yosys-pyosys` shims those calls onto the pyosys wheel; the
+  `_LLN_OVERRIDE_YOSYS` env var (exported from env.sh, NOT in `.FABulous/.env`,
+  whose schema rejects unknown keys) points LibreLane at it.
+- The PDK resolves itself: `FAB_PDK=ihp-sg13g2` in `fabric/.FABulous/.env` and
+  FABulous/ciel download the recommended build (~1 GB) to `~/.ciel` on first
+  use. The IHP PDK ships its own LibreLane tech files, including the config
+  latch map and tribuf map, so the fabric's config latches synthesize to
+  `sg13g2_dlhq_1` with no custom techmap.
+
+Verified in a clean environment up to the first OpenROAD invocation
+(lint -> synthesis to SG13G2 cells -> netlist checks all pass on LUT4AB).
+The run order:
+
+```sh
+cd fabric
+FABulous -p . run "load_fabric; gen_tile_macro LUT4AB"   # one tile first
+FABulous -p . run "load_fabric; gen_all_tile_macros"     # the rest (hours)
+FABulous -p . run "load_fabric; gen_fabric_macro"        # stitch the fabric
+FABulous -p . run "load_fabric; timing_model --mode physical"  # sign-off-grade pips
+```
+
+Outputs: `Tile/<T>/macro/final_views/{gds,lef,nl,spef}` per tile,
+`Fabric/macro/` + `gds/` for the stitched fabric — the area number comes from
+the fabric DIE_AREA, and physical mode replaces the structural timing model
+with parasitic-aware delays.
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep

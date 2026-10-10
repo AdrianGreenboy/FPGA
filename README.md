@@ -172,14 +172,22 @@ wrapper and assigns the address.
    "IO_1_bidirectional_frame_config_pass is not part of the design". Use 0.66.
    FABulous project default PDK is IHP SG13G2; removed in `.FABulous/.env` for RTL work.
 
-7. **Never launch Vivado from a shell with the FABulous venv active.** Lopper (PLM
+7. **Vivado 2025.2.1 functionally mis-synthesizes the fabric's MULADD** (second
+   silicon-confirmed synthesis bug on this version, after the indexed-VHDL-function
+   one). Evidence: blk_mac14/blocks14 wrong on silicon while counter/LFSR/RegFile/BRAM
+   pass; results identical at 10/25/50 MHz (not timing); the same bitstream is correct
+   in RTL simulation; blk_macprobe shows the silicon result is a (corrupted) function
+   of the true product alone - carry corruption at adder columns 1,2,6,8,10,12 plus an
+   operand-dependent output bit 5. Mitigation in prepare_sources.sh: `use_dsp` +
+   `keep_hierarchy` on MULADD (DSP58 mapping). Verify with blk_macprobe after rebuild.
+8. **Never launch Vivado from a shell with the FABulous venv active.** Lopper (PLM
    generation in `write_device_image`) picks up `.venv/bin/pcpp`, which dies under Vivado's
    `PYTHONHOME` ("No module named 'encodings'"). `./vivado.sh` strips it from PATH.
-8. **Python register access must be 32-bit.** `struct.pack_into("<I", mmap, ...)` writes
+9. **Python register access must be 32-bit.** `struct.pack_into("<I", mmap, ...)` writes
    byte by byte → 4+ AXI writes per word; the old wrapper counted each one (CFG_COUNT
    = 5 × 1806 on silicon). Fixed twice: `efpga.py` uses `memoryview.cast("I")`, and the
    wrapper now rejects partial CFG_DATA / IO_PULSE writes with SLVERR.
-9. **Disk space:** a fresh PetaLinux project needs 60–100 GB; keep it on `/data`.
+10. **Disk space:** a fresh PetaLinux project needs 60–100 GB; keep it on `/data`.
 
 ## User designs with hard blocks
 

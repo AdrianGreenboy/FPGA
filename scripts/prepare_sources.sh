@@ -39,6 +39,15 @@ open(p, "w").write(n[0])
 EOF
 cp "$HERE/rtl/fpga/sram_1rw1r_32_256_8_sky130_fpga.v" "$OUT/fabric/"
 
+# FPGA build only: Vivado 2025.2.1 functionally mis-synthesizes the fabric's MULADD
+# (silicon-confirmed with blk_macprobe: result is a corrupted function of the true
+# product - carry corruption in columns 1,2,6,8,10,12 of the product adder, plus an
+# operand-dependent output bit 5; identical at 10/25/50 MHz; bitstream correct in RTL
+# sim). use_dsp maps the MAC into a DSP58; keep_hierarchy stops the cross-boundary
+# LUT merging with the config muxes that plausibly caused it. ASIC flow untouched.
+sed -i 's/^module MULADD /(* use_dsp = "yes", keep_hierarchy = "yes" *)\nmodule MULADD /' "$OUT/fabric/MULADD.v"
+grep -q 'use_dsp' "$OUT/fabric/MULADD.v" || { echo "MULADD use_dsp patch failed"; exit 1; }
+
 # simulation copy of the mux models with a small delay
 {
     echo '`timescale 1ns / 1ps'

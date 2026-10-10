@@ -293,8 +293,24 @@ first run, all discovered the hard way:
   latch map and tribuf map, so the fabric's config latches synthesize to
   `sg13g2_dlhq_1` with no custom techmap.
 
-Verified in a clean environment up to the first OpenROAD invocation
-(lint -> synthesis to SG13G2 cells -> netlist checks all pass on LUT4AB).
+**First tile hardened (2026-10-10): LUT4AB -> GDS on IHP SG13G2.**
+KLayout DRC, antenna and Netgen LVS all pass ("Circuits match uniquely":
+2071 devices / 2197 nets). Die 246.24 x 245.28 um = **0.0604 mm2** (no_opt,
+the size FABulous' tile config fixes; `--optimise` can shrink it). Cell mix:
+616 `sg13g2_dlhq_1` config latches, 252 mux4 + 112 mux2 (switch matrix),
+8 flops, 126 antenna diodes inserted by the post-route repair. Flow time on a
+32-thread workstation: ~2 min. Caveats: Magic DRC was skipped by the flow's
+condition and the post-PnR setup/hold/slew checkers found no metrics, so
+timing sign-off still has to come from the physical timing model.
+
+Getting there took eight toolchain fixes on Ubuntu 24.04 - all now encoded in
+`scripts/asic_gds_setup.sh` (header lists them) and the IHP sections of
+`fabric/Tile/*/gds_config.yaml`: pyosys shim, OpenROAD CMake build with
+`-python`, PYTHONPATH for openroad's embedded interpreter, magic/netgen from
+source (netgen after tcl-dev), official KLayout .deb, and three OpenROAD-master
+vs LibreLane-3.0.16 incompatibilities (CTS latency balancing, `getArea()` in
+DBU^2 giving 360 mm pins, port diodes on UserCLKo).
+
 The run order:
 
 ```sh

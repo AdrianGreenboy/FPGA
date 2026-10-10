@@ -47,6 +47,17 @@ pdk::sky130A:
   PDN_HOFFSET: 5
 
 pdk::ihp-sg13g2:
+  # Port diodes land on UserCLK too; recent OpenROAD CTS then treats the
+  # diode as a clock sink and latency balancing explodes (30k delay buffers
+  # on LUT4AB). Antenna repair after global routing still covers the ports.
+  DIODE_ON_PORTS: "none"
+
+  # OpenROAD master returns dbTechLayer::getArea() in DBU^2 (was um^2), so the
+  # pin-length fallback in tile_io_place.py comes out 1e6x too long (360 mm
+  # pins -> GRT-0080). Pin length = min area / pin width = 0.144 / 0.4 um.
+  IO_PIN_V_LENGTH: 0.36
+  IO_PIN_H_LENGTH: 0.36
+
   # Routing
   RT_MAX_LAYER: TopMetal1
 

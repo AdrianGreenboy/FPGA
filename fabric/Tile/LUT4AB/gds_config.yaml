@@ -4,3 +4,7 @@ DIE_AREA: [0, 0, 246, 245]
 
 pdk::gf180mcuD:
   DIE_AREA: [0, 0, 290, 320]
+
+pdk::ihp-sg13g2:
+  # see Tile/include/gds_config.yaml: port diodes on UserCLKo break CTS
+  DIODE_ON_PORTS: "none"

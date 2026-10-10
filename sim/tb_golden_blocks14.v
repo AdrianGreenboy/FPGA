@@ -8,6 +8,11 @@
 //   Writes build/sim/blocks14.expect ("n value" per line) and checks that the
 //   result does not depend on idle gaps or on a pause inside the enable burst.
 // -----------------------------------------------------------------------------
+`ifndef BLK_NAME
+`define BLK_NAME blocks14
+`endif
+`define BLK_STR(x) `"x`"
+
 module tb_golden_blocks14;
     reg clk = 1'b0;
     always #20 clk = ~clk;
@@ -18,7 +23,7 @@ module tb_golden_blocks14;
     wire [31:0] wd, rd;
     wire [5:0]  cfg;
 
-    blocks14 dut (.clk(clk), .io_in(io_in), .io_out(io_out), .io_oeb(io_oeb),
+    `BLK_NAME dut (.clk(clk), .io_in(io_in), .io_out(io_out), .io_oeb(io_oeb),
                   .bram0_rd_addr(ra), .bram0_wr_addr(wa), .bram0_wr_data(wd),
                   .bram0_cfg(cfg), .bram0_rd_data(rd));
     BlockRAM_1KB bram (.clk(clk), .rd_addr(ra), .rd_data(rd), .wr_addr(wa), .wr_data(wd),
@@ -69,7 +74,7 @@ module tb_golden_blocks14;
     reg [13:0] ref_v;
     initial begin
         ns[0] = 1; ns[1] = 2; ns[2] = 3; ns[3] = 37; ns[4] = 1000; ns[5] = 16383;
-        fd = $fopen("blocks14.expect", "w");
+        fd = $fopen({`BLK_STR(`BLK_NAME), ".expect"}, "w");
         for (k = 0; k < 6; k = k + 1) begin
             run(ns[k], 1, 0, 0);   ref_v = r;
             run(ns[k], 13, 0, 0);
@@ -77,7 +82,7 @@ module tb_golden_blocks14;
             run(ns[k], 4, ns[k] / 2, 9);
             if (r !== ref_v) begin $display("FAIL n=%0d pause dependence %h vs %h", ns[k], r, ref_v); errors = errors + 1; end
             if (^ref_v === 1'bx) begin $display("FAIL n=%0d X in result", ns[k]); errors = errors + 1; end
-            $display("blocks14 n=%0d -> %h", ns[k], ref_v);
+            $display("%s n=%0d -> %h", `BLK_STR(`BLK_NAME), ns[k], ref_v);
             $fdisplay(fd, "%0d %04x", ns[k], ref_v);
         end
         $fclose(fd);

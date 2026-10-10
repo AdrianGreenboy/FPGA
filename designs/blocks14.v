@@ -19,7 +19,17 @@
 //     while en=1, c-2 while en=0. The result is then independent of pauses.
 // Golden values come from RTL simulation of this file (sim/tb_golden_blocks14.v).
 // -----------------------------------------------------------------------------
-module blocks14 (
+// Diagnostic variants: scripts/make_block_variants.sh writes blk_mac14.v, blk_rf14.v,
+// blk_bram14.v with BLK_USE = 001 / 010 / 100 (only that block reaches the MISR,
+// synthesis removes the others).
+`ifndef BLK_USE
+`define BLK_USE 3'b111   // [0] MULADD  [1] RegFile  [2] BlockRAM
+`endif
+`ifndef BLK_NAME
+`define BLK_NAME blocks14
+`endif
+
+module `BLK_NAME (
     input  wire        clk,
     input  wire [15:0] io_in,
     output wire [15:0] io_out,
@@ -99,10 +109,10 @@ module blocks14 (
     // ---------------- MISR -----------------------------------------------------
     wire rf_ok   = (valid >= 3'd1);
     wire bram_ok = (valid >= 3'd2);          // data = mem[c-2], written 2 steps ago
-    wire [13:0] in_vec = acc[13:0]
-                       ^ {acc[19:14], 8'd0}
-                       ^ {10'd0, rf_ok ? rf_q : 4'd0}
-                       ^ {bram_ok ? bram_q : 8'd0, 6'd0};
+    localparam [2:0] USE = `BLK_USE;
+    wire [13:0] in_vec = (USE[0] ? (acc[13:0] ^ {acc[19:14], 8'd0}) : 14'd0)
+                       ^ (USE[1] ? {10'd0, rf_ok ? rf_q : 4'd0}     : 14'd0)
+                       ^ (USE[2] ? {bram_ok ? bram_q : 8'd0, 6'd0}  : 14'd0);
     wire fb = sig[13] ^ sig[12] ^ sig[11] ^ sig[1];
     always @(posedge clk)
         if (en) sig <= rst ? 14'd0 : ({sig[12:0], fb} ^ in_vec);

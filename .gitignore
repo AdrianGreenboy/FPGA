@@ -11,3 +11,4 @@ __pycache__/
 .repo.yaml
 .venv/
 tools/
+designs/blk_*.v

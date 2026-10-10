@@ -33,6 +33,8 @@ Definition: `fabric/fabric.csv` (default FABulous tile set, cut to 8 rows).
 | `tb_fabric_reconfig`: raw fabric, A→B→A runtime reconfig, golden model every clock | **PASS** |
 | `tb_axil`: VHDL wrapper (GHDL→Verilog) + fabric, AXI4-Lite, isolation, CFG_COUNT, IO_PULSE exact | **PASS** |
 | Negative test (wrong bitstream must be detected) | **PASS** |
+| blocks14 golden RTL (MULADD + RegFile + BRAM), gap/pause invariant, each block mutation detected | **PASS** |
+| blocks14 bitstream on the fabric vs golden (`tb_fabric_expect`) | see `sim/run_sim.sh` |
 | `tb_axil`: partial writes (WSTRB≠1111) to CFG_DATA / IO_PULSE → SLVERR, not forwarded | **PASS** (old RTL fails it) |
 | Vivado 2025.2.1 synth/impl/PDI for TE0950 (VE2302) | ✔ — see *Silicon results* |
 | Silicon, JTAG (xsdb, `sw/efpga_xsdb.tcl`) | **PASS** — A→B→A ×3 |
@@ -58,20 +60,40 @@ Silicon signatures (`IO_PULSE`: reset 1 clk, enable n clks; identical in sim):
 | Reconfiguration time | 2.1 ms per 7.2 KB bitstream from the A72 (~3.4 MB/s); hardware floor 0.36 ms (5 clk/word @25 MHz) — AXI round-trip latency bound |
 | Fabric clock measured | 25.02 MHz (CYCLES register) |
 
-Open: real Fmax of the emulated fabric (clock sweep), BRAM / MULADD / RegFile not yet
-exercised by any user design, configuration power during reconfiguration.
+### Clock sweep (2026-10-10, JTAG selftest, A→B→A ×3 per point)
+
+| Fabric clock (measured) | counter14 | lfsr14 |
+|---|---|---|
+| 25.2 MHz | PASS | PASS |
+| **50.5 MHz** | **PASS** | **PASS** |
+| 75.9 MHz | FAIL — bits 9-13, value varies per run (carry chain) | PASS |
+| 100.9 MHz | FAIL — already at n=1 | FAIL — bit 13 only |
+
+Fmax is per routed design, as on any FPGA: counter14 50–75 MHz, lfsr14 75–100 MHz.
+The nextpnr generic timing model (34 / 80 MHz) gets the ordering right but not the
+absolute values. Default fabric clock for the emulation: **50 MHz**.
+Every point met hold (WHS ≥ 0); WNS (≈ −6.3 µs) is structural and does not
+depend on the clock.
+
+Open: blocks14 (BRAM / MULADD / RegFile) on silicon, configuration power during
+reconfiguration.
 
 ## Layout
 
 ```
 fabric/                    FABulous project (generated RTL, untouched = ASIC source of truth)
-designs/                   user designs for the fabric (counter14.v, lfsr14.v)
+designs/                   user designs for the fabric:
+                             counter14.v, lfsr14.v  - LUT/FF only
+                             blocks14.v             - MULADD + RegFile + BlockRAM #0 -> 14-bit MISR
 rtl/efpga_axil.vhd         AXI4-Lite host interface (VHDL-93/2008 clean)
 rtl/fpga/                  FPGA model of the sky130 OpenRAM macro used by BlockRAM_1KB
 scripts/compile_user_design.sh   design.v -> build/bitstreams/{bin,hex,h}
 scripts/prepare_sources.sh       fabric -> build/src/{fpga.f,sim.f}
 scripts/bin2words.py             .bin -> hex words / C array
-sim/run_sim.sh             full regression (iverilog + GHDL)
+scripts/patch_wrapper.py         connects io_* and bram0_* ports in FABulous' top_wrapper.v
+sim/run_sim.sh             full regression (iverilog + GHDL); QUICK=1 skips the slow blocks14 fabric sim
+sim/tb_golden_blocks14.v   golden RTL model of blocks14 -> build/bitstreams/blocks14.expect
+sim/tb_fabric_expect.v     any bitstream on the raw fabric vs an .expect file
 vivado/add_efpga_to_bd.tcl add the subsystem to an OPEN Versal BD (CIPS untouched)
 vivado/build_te0950.tcl    base .xpr -> copy -> +eFPGA -> PDI + XSA + reports
 vivado/efpga.xdc           LUTLP-1 downgrade + ALLOW_COMBINATORIAL_LOOPS (fabric only)
@@ -112,13 +134,14 @@ sim/run_sim.sh                                   # ~4 min, ends with REGRESSION:
 # or, from an existing working base project:
 ./vivado.sh -mode batch -source vivado/build_te0950.tcl -tclargs /path/base.xpr 25 4
 
-# silicon over JTAG (no Linux)
-xsdb sw/efpga_xsdb.tcl build/vivado/efpga_te0950.pdi \
-     build/bitstreams/counter14.hex build/bitstreams/lfsr14.hex 0xA4000000 3
+# silicon over JTAG (no Linux): <pdi> <base> <loops> <designs...> (d1 -> d2 -> ... -> d1)
+xsdb sw/efpga_xsdb.tcl build/vivado/efpga_te0950_50MHz.pdi 0xA4000000 3 \
+     build/bitstreams/counter14.hex build/bitstreams/lfsr14.hex build/bitstreams/blocks14.hex
 
 # silicon from PetaLinux (root; paste ONE command per line over UART)
 python3 efpga.py --base 0xA4000000 info
-python3 efpga.py --base 0xA4000000 selftest counter14.hex lfsr14.hex --loops 100
+python3 efpga.py --base 0xA4000000 selftest counter14.hex lfsr14.hex blocks14.hex --loops 100
+#   (blocks14.expect must sit next to blocks14.hex)
 ```
 
 `add_efpga_to_bd.tcl` expects `M_AXI_FPD` and `pl0_ref_clk/pl0_resetn` on the CIPS. If
@@ -157,6 +180,27 @@ wrapper and assigns the address.
    = 5 × 1806 on silicon). Fixed twice: `efpga.py` uses `memoryview.cast("I")`, and the
    wrapper now rejects partial CFG_DATA / IO_PULSE writes with SLVERR.
 9. **Disk space:** a fresh PetaLinux project needs 60–100 GB; keep it on `/data`.
+
+## User designs with hard blocks
+
+A user design is `module <name>(clk, io_in[15:0], io_out[15:0], io_oeb[15:0])`.
+MULADD and RegFile_32x4 are instantiated directly (bit-level ports as in yosys'
+`share/fabulous/prims.v`, configuration through parameters). BlockRAM #0 is reached by
+declaring these extra ports; `scripts/patch_wrapper.py` wires them to the RAM_IO bels:
+
+```verilog
+output [7:0]  bram0_rd_addr, bram0_wr_addr,
+output [31:0] bram0_wr_data,   // [20] = write enable (active high)
+output [5:0]  bram0_cfg,       // C0..C5, all 0 = 32-bit ports, no extra register
+input  [31:0] bram0_rd_data    // synchronous read, 1 cycle
+```
+
+Pitfalls found while writing blocks14 (all caught by `tb_golden_blocks14`):
+- MULADD has no clock enable: force the operands to 0 when the design is paused.
+- BRAM and RegFile keep their contents across reconfigurations: mask reads of
+  addresses not yet written since reset.
+- The BRAM read is synchronous; during a pause the address must stay the one of
+  the last active cycle, or the result depends on the pause length.
 
 ## Next steps
 

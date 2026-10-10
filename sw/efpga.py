@@ -3,11 +3,12 @@
 
   efpga.py [--base 0xA4000000] info
   efpga.py [--base ...] load   <bitstream.hex|.bin>
-  efpga.py [--base ...] selftest <counter14.hex> <lfsr14.hex> [--loops N]
+  efpga.py [--base ...] selftest <d1.hex> [<d2.hex> ...] [--loops N]
 
-selftest = the silicon version of sim/tb_axil.v: configure A, B, A (runtime
-reconfiguration) and check cycle-exact results produced with IO_PULSE against
-values computed here. Expected signatures (same as simulation):
+selftest = the silicon version of sim/tb_axil.v: configure d1, d2, ..., d1
+(runtime reconfiguration) and check cycle-exact results produced with IO_PULSE.
+Expected values: <design>.expect next to the .hex (golden RTL sim, written by
+sim/run_sim.sh), built in for counter14 / lfsr14:
   counter14: n=1 -> 0x0001, n=1000 -> 0x03e8, n=16383 -> 0x3fff
   lfsr14   : n=1 -> 0x0002, n=1000 -> 0x1cda, n=16383 -> 0x0001
 Needs root (or CAP_SYS_RAWIO). Base address: whatever Vivado assigned
@@ -73,7 +74,7 @@ def load_words(path: Path) -> list[int]:
     return [int(line, 16) for line in path.read_text().split() if line]
 
 
-def expect(design: str, n: int) -> int:
+def builtin_expect(design: str, n: int) -> int:
     if design == "counter14":
         return n & 0x3FFF
     s = 1
@@ -83,24 +84,43 @@ def expect(design: str, n: int) -> int:
     return s
 
 
-def selftest(fp: Efpga, a: Path, b: Path, loops: int) -> int:
-    seq = [("counter14", load_words(a)), ("lfsr14", load_words(b)), ("counter14", load_words(a))]
+def expectations(path: Path) -> list[tuple[int, int]]:
+    """(n, value) pairs: from <design>.expect (golden RTL sim) next to the bitstream,
+    or built in for counter14 / lfsr14."""
+    exp_file = path.with_suffix(".expect")
+    if exp_file.exists():
+        pairs = []
+        for line in exp_file.read_text().splitlines():
+            if line.strip():
+                n, v = line.split()
+                pairs.append((int(n), int(v, 16)))
+        return pairs
+    if path.stem in ("counter14", "lfsr14"):
+        return [(n, builtin_expect(path.stem, n)) for n in (1, 1000, 16383)]
+    sys.exit(f"{path}: no {exp_file.name} and no built-in model for '{path.stem}'")
+
+
+def selftest(fp: Efpga, designs: list[Path], loops: int) -> int:
+    """Configure designs[0..k-1] and then designs[0] again (A -> B -> ... -> A)."""
+    order = designs + designs[:1]
+    data = {p: (load_words(p), expectations(p)) for p in designs}
     errors = 0
     for loop in range(loops):
-        for name, words in seq:
+        for path in order:
+            words, exp = data[path]
+            name = path.stem
             dt = fp.configure(words)
             oe = fp.rd("IO_OE")
             if oe != 0xFFFC:
                 print(f"  {name}: IO_OE=0x{oe:04x} expected 0xfffc"); errors += 1
             line = []
-            for n in (1, 1000, 16383):
+            for n, want in exp:
                 fp.pulse(0x3, 1)                 # rst + en for exactly 1 clock
                 fp.pulse(0x2, n)                 # en for exactly n clocks
                 got = (fp.rd("IO_OUT") >> 2) & 0x3FFF
-                exp = expect(name, n)
-                ok = got == exp
+                ok = got == want
                 errors += not ok
-                line.append(f"n={n}:{got:04x}{'' if ok else f'!={exp:04x}'}")
+                line.append(f"n={n}:{got:04x}{'' if ok else f'!={want:04x}'}")
             print(f"[loop {loop}] {name:9s} cfg {len(words)} words in {dt * 1e3:6.1f} ms  "
                   + "  ".join(line))
     print("RESULT:", "PASS" if errors == 0 else f"FAIL ({errors} errors)")
@@ -113,7 +133,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("info")
     p = sub.add_parser("load"); p.add_argument("bitstream", type=Path)
-    p = sub.add_parser("selftest"); p.add_argument("a", type=Path); p.add_argument("b", type=Path)
+    p = sub.add_parser("selftest"); p.add_argument("designs", type=Path, nargs="+")
     p.add_argument("--loops", type=int, default=1)
     a = ap.parse_args()
 
@@ -130,7 +150,7 @@ def main() -> int:
         w = load_words(a.bitstream)
         print(f"{a.bitstream.name}: {len(w)} words in {fp.configure(w) * 1e3:.1f} ms")
     else:
-        return selftest(fp, a.a, a.b, a.loops)
+        return selftest(fp, a.designs, a.loops)
     return 0
 
 

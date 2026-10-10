@@ -35,12 +35,12 @@ cp "$SRC" "$WORK/$NAME.v"
 for f in "${EXTRA[@]}"; do cp "$f" "$WORK/"; done
 
 cd "$FAB"
-# 1) wrapper with every IO bel; FABulous leaves the port connections empty for
-#    non-demo designs, so connect io_in/io_out/io_oeb to the IO bel buses here.
+# 1) wrapper with every bel; FABulous leaves the user-design instance unconnected
+#    for non-demo designs -> scripts/patch_wrapper.py connects io_* and, if the
+#    design declares them, the bram0_* ports (BlockRAM #0 via the RAM_IO bels).
 FABulous -p . run "load_fabric; gen_user_design_wrapper user_design/$NAME.v user_design/top_wrapper.v" > "$OUT/${NAME}_fab.log" 2>&1
-sed -i "s/\.io_in(), \.io_out(), \.io_oeb()/.io_in(IO_1_bidirectional_frame_config_pass_O), .io_out(IO_1_bidirectional_frame_config_pass_I), .io_oeb(IO_1_bidirectional_frame_config_pass_T)/" user_design/top_wrapper.v
-grep -q "io_in(IO_1_bidirectional_frame_config_pass_O)" user_design/top_wrapper.v \
-    || { echo "ERROR: could not patch top_wrapper.v (did the FABulous wrapper format change?)"; exit 1; }
+python3 "$HERE/scripts/patch_wrapper.py" user_design/top_wrapper.v "user_design/$NAME.v" "$NAME" \
+    || { echo "ERROR: could not patch top_wrapper.v"; exit 1; }
 
 # 2) synth + PnR + bitgen
 DESIGN_FILES="user_design/$NAME.v"

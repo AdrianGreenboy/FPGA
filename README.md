@@ -10,6 +10,9 @@ the Versal (TE0950 / VE2302), reconfigurable at runtime from the PS (later: from
                                                          └─ IO_IN / IO_OUT / IO_PULSE ──► 16 IO bels
 ```
 
+![Architecture](docs/architecture.svg)
+*(docs/architecture.svg — regenerate with `python3 docs/gen_architecture.py`)*
+
 ## Fabric `efpga_v0`
 
 | Resource | Count |

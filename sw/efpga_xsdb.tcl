@@ -70,6 +70,9 @@ proc expect {design n} {
 # ---------------------------------------------------------------- program + target
 connect
 puts "== targets"; puts [targets]
+targets -set -nocase -filter {name =~ "*Versal*"}
+rst -system
+after 1500
 targets -set -nocase -filter {name =~ "PMC"}
 puts "== programming $PDI"
 device program $PDI

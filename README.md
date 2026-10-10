@@ -246,11 +246,11 @@ this flow — and OpenSTA; see the script header).
 
 nextpnr-reported Fmax, same netlists as the Versal campaign:
 
-| design    | Versal emulated (silicon) | SG13G2 typ (1.20 V, 25 C) | SG13G2 slow (1.08 V, 125 C) |
-|-----------|---------------------------|---------------------------|------------------------------|
-| counter14 | 50.5 pass / 75.9 fail     | 185.9 MHz                 | 127.6 MHz                    |
-| lfsr14    | 75.9 pass / 100.9 fail    | 342.5 MHz                 | 242.7 MHz                    |
-| blocks14p | ≥25 (not swept)           | 267.4 MHz                 | 186.6 MHz                    |
+| design    | Versal emulated (silicon) | SG13G2 typ, structural | SG13G2 slow, structural | **SG13G2 slow, physical (post-layout)** |
+|-----------|---------------------------|------------------------|-------------------------|------------------------------------------|
+| counter14 | 50.5 pass / 75.9 fail     | 185.9 MHz              | 127.6 MHz               | **56.1 MHz**                             |
+| lfsr14    | 75.9 pass / 100.9 fail    | 342.5 MHz              | 242.7 MHz               | **123.2 MHz**                            |
+| blocks14p | ≥25 (not swept)           | 267.4 MHz              | 186.6 MHz               | **74.9 MHz**                             |
 
 Honest limits of these numbers:
 
@@ -267,10 +267,23 @@ Honest limits of these numbers:
   the fabulous timing tools crash while *reporting* a failed subprocess
   (str.join over PosixPath), masking the real error underneath.
 
-Conclusion: the 130 nm fabric lands in the 100–250 MHz class structurally,
-realistically high-double/low-triple-digit MHz after layout — far above the
-Versal emulation (which is routing-hop-limited by construction) and below a
-300 MHz user clock, which stays out of reach at 130 nm.
+**Physical column (2026-10-11):** `timing_model --mode physical` on the hardened
+fabric - per-tile post-route netlists + SPEF (RC-extracted), slow-corner
+liberty, inter-tile abutment delays (~1 ps). Real wires cost **50-60 %** of the
+structural numbers, far more than the 20-40 % predicted. Remaining caveats:
+bel-internal LUT/FF/carry arcs are still the pre-layout OpenSTA values,
+MULADD/RegFile/BRAM internals have no arcs, the clock tree is ideal, and this
+is the worst corner (structural typ/slow ratio was ~1.45, so typical silicon
+should land around 80 / 175 / 110 MHz).
+
+Conclusion: worst-case user-logic Fmax on the 130 nm fabric is **55-125 MHz**
+for these designs, ~110-175 MHz typical. Notably the worst-case ASIC numbers
+land in the same range as the Versal emulation (which was limited for an
+entirely different reason - untimed emulated routing hops). A 300 MHz user
+clock is out of reach at 130 nm; the levers on this fabric are smaller tiles
+(`--optimise`: every no_opt tile is 246 x 245 um at ~64 % utilisation, so
+switch-matrix wires span the whole tile), stronger drivers on long wires, and
+pipelined user designs.
 
 ## GDS hardening flow (FABulous -> LibreLane, IHP SG13G2)
 
@@ -302,6 +315,15 @@ the size FABulous' tile config fixes; `--optimise` can shrink it). Cell mix:
 32-thread workstation: ~2 min. Caveats: Magic DRC was skipped by the flow's
 condition and the post-PnR setup/hold/slew checkers found no metrics, so
 timing sign-off still has to come from the physical timing model.
+
+**Full fabric (2026-10-11): all 13 tile types hardened (each DRC/LVS/antenna
+clean) and stitched by `gen_fabric_macro` into `Fabric/macro/final_views/gds/eFPGA.gds`
+(26 MB): 2483.0 x 2455.3 um = **6.10 mm2** in IHP SG13G2, DRC clean. The four
+BlockRAMs sit outside eFPGA_top and are not included (they still point at the
+sky130 OpenRAM model; IHP needs the PDK's sg13g2_sram macros). The 20 N/S
+terminator tiles are full-size in no_opt mode - ~1.2 mm2, a fifth of the
+fabric - so `--optimise` on them is the first area lever (4.5-5 mm2 looks
+realistic).
 
 Getting there took eight toolchain fixes on Ubuntu 24.04 - all now encoded in
 `scripts/asic_gds_setup.sh` (header lists them) and the IHP sections of

@@ -232,6 +232,46 @@ Pitfalls found while writing blocks14 (all caught by `tb_golden_blocks14`):
 - The BRAM read is synchronous; during a pause the address must stay the one of
   the last active cycle, or the result depends on the pause length.
 
+## ASIC timing on IHP SG13G2 (structural, 2026-10-10)
+
+First real-silicon-process Fmax numbers for the fabric, from the FABulous 2.2
+`timing_model` flow: every tile is synthesized to SG13G2 standard cells
+(yosys + liberty), OpenSTA extracts per-pip delays from the resulting SDF, and
+nextpnr then places & routes timing-driven against that model. Bel-internal
+arcs (LUT, FF, carry) were measured separately with OpenSTA on the
+yosys-mapped `LUT4c_frame_config_dffesr` bel and fed into
+`gen_npnr_model.py`. Setup: `scripts/asic_timing_setup.sh <ihp-open-pdk> [typ|slow]`
+(builds required: native yosys 0.66 — the venv's yowasp wrapper cannot run
+this flow — and OpenSTA; see the script header).
+
+nextpnr-reported Fmax, same netlists as the Versal campaign:
+
+| design    | Versal emulated (silicon) | SG13G2 typ (1.20 V, 25 C) | SG13G2 slow (1.08 V, 125 C) |
+|-----------|---------------------------|---------------------------|------------------------------|
+| counter14 | 50.5 pass / 75.9 fail     | 185.9 MHz                 | 127.6 MHz                    |
+| lfsr14    | 75.9 pass / 100.9 fail    | 342.5 MHz                 | 242.7 MHz                    |
+| blocks14p | ≥25 (not swept)           | 267.4 MHz                 | 186.6 MHz                    |
+
+Honest limits of these numbers:
+
+- **Structural = no wire parasitics.** Pip delays are cell delays only
+  (SDF INTERCONNECT entries are 0). Post-layout (physical mode, after
+  `gen_fabric_macro` + LibreLane/OpenROAD, with SPEF) will be slower,
+  plausibly 20–40 % on routing-heavy paths. Treat these as upper bounds.
+- MULADD, RegFile and BRAM bels have **no timing arcs yet** — paths through
+  their internals are untimed. blk_mac14's multiplier path is not covered.
+- Clock tree is ideal (constant arrival, zero skew); nextpnr's report is not
+  sign-off STA.
+- Two upstream bugs had to be patched to get here (handled by the setup
+  script): the `sdf_timing` lexer rejects `$` in escaped instance names, and
+  the fabulous timing tools crash while *reporting* a failed subprocess
+  (str.join over PosixPath), masking the real error underneath.
+
+Conclusion: the 130 nm fabric lands in the 100–250 MHz class structurally,
+realistically high-double/low-triple-digit MHz after layout — far above the
+Versal emulation (which is routing-hop-limited by construction) and below a
+300 MHz user clock, which stays out of reach at 130 nm.
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep

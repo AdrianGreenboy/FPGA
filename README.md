@@ -75,8 +75,25 @@ absolute values. Default fabric clock for the emulation: **50 MHz**.
 Every point met hold (WHS ≥ 0); WNS (≈ −6.3 µs) is structural and does not
 depend on the clock.
 
-Open: blocks14 (BRAM / MULADD / RegFile) on silicon, configuration power during
-reconfiguration.
+### Hard blocks on silicon (2026-10-10, DSP58 build)
+
+| Design | 25 MHz build | 15 MHz build |
+|---|---|---|
+| counter14, lfsr14 | PASS | PASS |
+| blk_mac14 / blk_rf14 / blk_bram14 (one hard block each) | PASS incl. n=16383 | PASS incl. n=16383 |
+| blk_macprobe (1898 silicon products vs a*b) | **1898/1898 PASS** | - |
+| blocks14 (all three blocks + MISR, unpipelined) | fails ~40 % of 16k-cycle runs (~3e-5/cycle) | fails from n=37 (~7 %/cycle) |
+| blocks14p (same, 2 pipeline stages before the MISR) | see selftest | see selftest |
+
+blocks14's combined route (BRAM x=9 / DSP x=6 -> MISR) is the longest configured
+path of the fabric. The host FPGA's STA cannot time bitstream-configured paths
+(loops are broken arbitrarily), so that path's physical delay is a per-build
+lottery and its failures look stochastic (delay is data-dependent; the MISR state
+varies per cycle). This is a structural limit of emulating an FPGA inside an
+FPGA - it does not exist in the ASIC flow, where the fabric is timed as a normal
+netlist. The fix is the normal FPGA one: pipeline long user paths (blocks14p).
+
+Open: configuration power during reconfiguration.
 
 ## Layout
 

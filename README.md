@@ -39,6 +39,8 @@ Definition: `fabric/fabric.csv` (default FABulous tile set, cut to 8 rows).
 | Vivado 2025.2.1 synth/impl/PDI for TE0950 (VE2302) | ✔ — see *Silicon results* |
 | Silicon, JTAG (xsdb, `sw/efpga_xsdb.tcl`) | **PASS** — A→B→A ×3 |
 | Silicon, Linux (A72, `/dev/mem`, `sw/efpga.py`) | **PASS** — 300 reconfigs, 900/900 bit-exact |
+| Silicon, hard blocks (RegFile / BRAM / MULADD, DSP58 build) | **PASS** on 2 independent builds; MULADD 1898/1898 products |
+| Silicon, combined pipelined design (blocks14p) | **PASS** on both builds, 240/240 checks incl. 40 × 16k-cycle runs |
 
 Silicon signatures (`IO_PULSE`: reset 1 clk, enable n clks; identical in sim):
 
@@ -83,7 +85,7 @@ depend on the clock.
 | blk_mac14 / blk_rf14 / blk_bram14 (one hard block each) | PASS incl. n=16383 | PASS incl. n=16383 |
 | blk_macprobe (1898 silicon products vs a*b) | **1898/1898 PASS** | - |
 | blocks14 (all three blocks + MISR, unpipelined) | fails ~40 % of 16k-cycle runs (~3e-5/cycle) | fails from n=37 (~7 %/cycle) |
-| blocks14p (same, 2 pipeline stages before the MISR) | see selftest | see selftest |
+| blocks14p (same, 2 pipeline stages before the MISR) | **PASS** (10 loops, 120 checks) | **PASS** (10 loops, 120 checks) |
 
 blocks14's combined route (BRAM x=9 / DSP x=6 -> MISR) is the longest configured
 path of the fabric. The host FPGA's STA cannot time bitstream-configured paths

@@ -8,3 +8,6 @@ for v in "mac14 3'b001" "rf14 3'b010" "bram14 3'b100"; do
     { echo "\`define BLK_NAME blk_$1"; echo "\`define BLK_USE $2"; cat "$D/blocks14.v"; } > "$D/blk_$1.v"
     echo "wrote designs/blk_$1.v"
 done
+# raw MULADD accumulator on the pins (no MISR): output after n steps = sum c*(c^0xA5), c=0..n-1
+{ echo "\`define BLK_NAME blk_macraw14"; echo "\`define BLK_USE 3'b001"; echo "\`define BLK_RAW"; cat "$D/blocks14.v"; } > "$D/blk_macraw14.v"
+echo "wrote designs/blk_macraw14.v"

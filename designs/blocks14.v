@@ -117,7 +117,11 @@ module `BLK_NAME (
     always @(posedge clk)
         if (en) sig <= rst ? 14'd0 : ({sig[12:0], fb} ^ in_vec);
 
+`ifdef BLK_RAW
+    assign io_out = {acc[13:0], 2'b00};   // raw accumulator (diagnosis)
+`else
     assign io_out = {sig, 2'b00};
+`endif
     assign io_oeb = 16'b0000_0000_0000_0011;
 endmodule
 `default_nettype wire

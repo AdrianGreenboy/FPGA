@@ -12,3 +12,10 @@ __pycache__/
 .venv/
 tools/
 designs/blk_*.v
+
+# GDS-flow outputs (large, regenerable)
+fabric/Tile/*/macro/
+fabric/Fabric/macro/
+fabric/gds/
+fabric/timing_cfg.json
+fabric/.FABulous/pips.backup.txt

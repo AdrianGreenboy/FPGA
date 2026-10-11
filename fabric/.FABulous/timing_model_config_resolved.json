@@ -1,0 +1,23 @@
+{
+    "project_dir": "/home/adrian/FPGA/fabric",
+    "liberty_files": [
+        "/data/adrian/tools/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_slow_1p08V_125C.lib"
+    ],
+    "min_buf_cell_and_ports": "sg13g2_buf_1 A X",
+    "synth_executable": "/data/adrian/tools/yosys066/yosys",
+    "sta_executable": "/home/adrian/FPGA/.venv/bin/sta",
+    "pdk_name": "ihp-sg13g2",
+    "techmap_files": [
+        "/home/adrian/FPGA/fabric/Tile/include/sg13g2_latchmap.v"
+    ],
+    "tiehi_cell_and_port": "sg13g2_tiehi L_HI",
+    "tielo_cell_and_port": "sg13g2_tielo L_LO",
+    "custom_per_tile_source_files": null,
+    "sta_program": "opensta",
+    "synth_program": "yosys",
+    "mode": "physical",
+    "consider_wire_delay": true,
+    "delay_type_str": "max_all",
+    "delay_scaling_factor": 1.0,
+    "debug": false
+}

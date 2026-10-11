@@ -3,3 +3,6 @@ if [ -n "$PETALINUX" ] || echo "$PATH" | grep -qi petalinux; then
 fi
 source ~/FPGA/.venv/bin/activate
 cd ~/FPGA
+export _LLN_OVERRIDE_YOSYS="/home/adrian/FPGA/scripts/yosys-pyosys"
+export PYTHONPATH="$HOME/FPGA/.venv/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}"
+export CTS_NO_INSERTION_DELAY=1

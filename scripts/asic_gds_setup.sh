@@ -133,6 +133,23 @@ if [[ -f "$CTS" ]] && ! grep -q "no_insertion_delay" "$CTS"; then
     grep -q "no_insertion_delay" "$CTS" && echo "  patched librelane cts.tcl (-no_insertion_delay)" \
         || { echo "  FAILED to patch $CTS - upstream changed, patch by hand"; exit 1; }
 fi
+# FABulous 2.2 run_FABulous_eFPGA_macro puts the Fabric object into the
+# LibreLane config; Flow.start() JSON-dumps the config and the Fabric's object
+# graph is cyclic -> "ValueError: Circular reference detected". Serialise it by
+# name instead (it is only written to resolved.json, never read back).
+GD="$SITE/librelane/common/generic_dict.py"
+if [[ -f "$GD" ]] && ! grep -q '__name__ == "Fabric"' "$GD"; then
+    python3 - "$GD" <<'PYEOF'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "        elif not isinstance(o, type) and dataclasses.is_dataclass(o):"
+new = ('        elif type(o).__name__ == "Fabric":\n'
+       '            return {"fabric": getattr(o, "name", "?")}\n' + old)
+assert old in s, "generic_dict.py changed upstream - patch by hand"
+open(p, "w").write(s.replace(old, new, 1))
+PYEOF
+    echo "  patched librelane generic_dict.py (Fabric JSON serialisation)"
+fi
 echo
 echo "Ready. Re-source env.sh, then:"
 echo "  cd $HERE/fabric"

@@ -7,6 +7,8 @@
 # Differences to the raw FABulous output:
 #   * duplicated primitive files are de-duplicated (first copy wins)
 #   * gf180mcuD_latchmap.v (ASIC tech-map) is dropped
+#   * anything under */macro/* (GDS-flow outputs: hardened netlists, LibreLane
+#     run dirs) is ignored - it would duplicate the tile modules
 #   * BlockRAM_1KB.v: the (* blackbox *) stub of the sky130 OpenRAM macro is cut
 #     out and replaced by rtl/fpga/sram_1rw1r_32_256_8_sky130_fpga.v
 #   * sim only: models_pack.v routing muxes get a 0.2 ns delay so transient
@@ -26,7 +28,7 @@ while read -r f; do
     [[ -n "${seen[$b]+x}" ]] && continue
     seen[$b]=1
     cp "$f" "$OUT/fabric/$b"
-done < <(find "$FAB/Fabric" "$FAB/Tile" -name '*.v' -type f | sort)
+done < <(find "$FAB/Fabric" "$FAB/Tile" -name '*.v' -type f -not -path '*/macro/*' | sort)
 
 # strip the blackbox SRAM stub (from the "(* blackbox *)" line to its endmodule)
 python3 - "$OUT/fabric/BlockRAM_1KB.v" <<'EOF'

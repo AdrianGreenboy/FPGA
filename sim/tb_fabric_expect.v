@@ -3,7 +3,11 @@
 // -----------------------------------------------------------------------------
 // tb_fabric_expect : load a bitstream into the raw fabric and check IO_PULSE-style
 // results against an expect file ("n value" per line, from a golden RTL sim).
-//   +hex=<design.hex>  +expect=<design.expect>  [+other=<other.hex>]
+//   +hex=<design.hex>  +expect=<design.expect>  [+other=<other.hex>] [+maxn=<N>]
+// +maxn skips expect entries with n > N (gate-level runs are slow).
+// -DGL_SIM: gate-level run against the hardened netlists (sim/run_gl.sh);
+// pulls in the generated force_block.vh, fired by config_done after the
+// first upload.
 // Sequence: load design, check all n; load <other> (if given); reload design,
 // check all n again (memories now hold data of earlier runs -> must not matter).
 // -----------------------------------------------------------------------------
@@ -29,6 +33,12 @@ module tb_fabric_expect;
     reg [13:0] exp_v [0:31];
     reg [1023:0] hex_a, hex_b, exp_f;
     reg have_b;
+    integer maxn = 32'h7fffffff;
+`ifdef GL_SIM
+    reg config_done = 1'b0;
+    `include "force_block.vh"
+    `include "force_block_tiles.vh"
+`endif
 
     task load(input integer which, input integer n);
         integer i;
@@ -54,7 +64,7 @@ module tb_fabric_expect;
     task check_all(input [127:0] tag);
         integer i;
         begin
-            for (i = 0; i < ne; i = i + 1) begin
+            for (i = 0; i < ne; i = i + 1) if (exp_n[i] <= maxn) begin
                 pulse(16'h0003, 1);
                 repeat (3) @(posedge CLK);
                 pulse(16'h0002, exp_n[i]);
@@ -74,6 +84,7 @@ module tb_fabric_expect;
             $display("usage: +hex=<file> +expect=<file> [+other=<file>]"); $finish;
         end
         have_b = $value$plusargs("other=%s", hex_b);
+        if ($value$plusargs("maxn=%d", maxn)) $display("checking n <= %0d only", maxn);
         for (k = 0; k < MAXW; k = k + 1) begin bs_a[k] = 32'hx; bs_b[k] = 32'hx; end
         $readmemh(hex_a, bs_a);
         if (have_b) $readmemh(hex_b, bs_b);
@@ -91,7 +102,12 @@ module tb_fabric_expect;
 
         #100 resetn = 1'b0; #400 resetn = 1'b1;
         repeat (10) @(posedge CLK);
-        load(0, len_a); check_all("first load");
+        load(0, len_a);
+`ifdef GL_SIM
+        config_done = 1'b1;              // X-scrub of the hardened fabric (once)
+        repeat (5) @(posedge CLK);
+`endif
+        check_all("first load");
         if (have_b) begin load(1, len_b); pulse(16'h0003, 1); pulse(16'h0002, 500); end
         load(0, len_a); check_all("reload   ");
         if (errors == 0) $display("RESULT: PASS (fabric matches golden)");

@@ -379,6 +379,18 @@ Two lessons from getting there:
   keep X in unused in-tile routing); with `GL_SCRUB=full` the simulator stalls
   at the scrub instant (configurable loops come alive). Kept as tooling.
 
+## BlockRAM on IHP silicon
+
+`rtl/asic/ihp/sram_1rw1r_32_256_8_sky130.v` maps the sky130 OpenRAM interface
+that FABulous' BlockRAM_1KB instantiates onto the IHP true dual-port macro
+`RM_IHPSG13_2P_256x32_c2_bm_bist` (256x32, bit mask, 702.83 x 136.97 um,
+clk-to-q 3.1 ns typ / 5.3 ns slow): port A write, port B read, A/B_DLY tied 1
+(mandatory), BIST tied off. `sim/run_sram_ihp.sh`: 15k random reads vs the
+FPGA model, 0 mismatches; a swapped byte-mask lane is caught. Silicon
+constraint (IHP datasheet: "no conflict handling"): reading the address being
+written in the same cycle returns undefined data - user designs must avoid it.
+ASIC builds only; the Vivado/RTL flows keep rtl/fpga.
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep

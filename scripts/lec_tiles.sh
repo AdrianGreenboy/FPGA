@@ -60,8 +60,24 @@ if [[ ${#TILES[@]} -eq 0 ]]; then
     mapfile -t TILES < <(ls "$NL"/Tile/*/macro/final_views/nl/*.nl.v | xargs -n1 basename | sed 's/\.nl\.v$//' | sort)
 fi
 
+# Cut points that break CONFIGURABLE combinational loops. A loop the
+# configuration can close has no unique value; SAT then picks different fixed
+# points on the two sides and reports a spurious mismatch. RegFile: AD/BD (the
+# combinational read data) can be routed back into A_ADR/B_ADR, closing a loop
+# through the memory read. Cutting AD/BD on both sides still proves AD/BD
+# themselves (they stay outputs) and proves everything downstream with AD/BD as
+# shared inputs - equivalence for every loop-free configuration, which is every
+# configuration nextpnr can produce. Real RegFile netlist: 729/168 -> 897/0.
+cut_for() {
+    case "$1" in
+        RegFile) echo "w:AD0 w:AD1 w:AD2 w:AD3 w:BD0 w:BD1 w:BD2 w:BD3" ;;
+        *) echo "" ;;
+    esac
+}
+
 gen() {  # gen <tile> -> writes $OUT/<tile>.ys
-    local T=$1 rtl syn
+    local T=$1 rtl syn cut
+    cut=$(cut_for "$T")
     {
         if [[ "${LEC_GOLD:-rtl}" == "synth" ]]; then
             syn=$(ls -t "$NL"/Tile/"$T"/macro/*/runs/RUN_*/*-yosys-synthesis/"$T".nl.v 2>/dev/null | head -1)
@@ -71,6 +87,7 @@ gen() {  # gen <tile> -> writes $OUT/<tile>.ys
             echo "read_verilog $syn"
             echo "hierarchy -top $T"
             echo "flatten; opt_clean; splitnets"
+            [[ -n "$cut" ]] && echo "expose -cut $cut"
             echo "rename $T gold"
             echo "design -stash gold"
         else
@@ -80,6 +97,7 @@ gen() {  # gen <tile> -> writes $OUT/<tile>.ys
             echo "hierarchy -top $T"
             echo "proc; memory; flatten; opt_clean"
             echo "splitnets"     # mem[31] [0] -> mem[31][0], as the router writes it
+            [[ -n "$cut" ]] && echo "expose -cut $cut"
             echo "rename $T gold"
             echo "design -stash gold"
         fi
@@ -87,6 +105,7 @@ gen() {  # gen <tile> -> writes $OUT/<tile>.ys
         echo "read_verilog $NL/Tile/$T/macro/final_views/nl/$T.nl.v"
         echo "hierarchy -top $T"
         echo "flatten; opt_clean; splitnets"
+        [[ -n "$cut" ]] && echo "expose -cut $cut"
         echo "rename $T gate"
         echo "design -stash gate"
         echo "design -copy-from gold -as gold gold"
@@ -116,7 +135,7 @@ run() {  # run <tile>
         printf "%-16s ERROR     (see build/lec/%s.log)\n" "$T" "$T"
     fi
 }
-export -f gen run
+export -f cut_for gen run
 export FAB NL OUT YOSYS LIB LEC_GOLD LEC_TIMEOUT
 echo "LEC: ${#TILES[@]} tiles, gold=${LEC_GOLD:-rtl}, liberty $(basename "$LIB"), yosys $("$YOSYS" -V 2>/dev/null | head -1)"
 printf "%s\n" "${TILES[@]}" | xargs -P "${JOBS:-$(( ($(nproc)+1)/2 ))}" -I{} bash -c 'run {}' | tee "$OUT/summary.txt"

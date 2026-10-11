@@ -350,18 +350,34 @@ with parasitic-aware delays.
 
 ## Verifying the hardened fabric
 
-- **LVS** (Netgen, in the GDS flow): layout == post-route netlist, every tile.
-- **LEC** (`scripts/lec_tiles.sh`, yosys equiv_*): post-route netlist == RTL for
-  *all* configurations. Method-checked on a yosys-mapped mock: 12/13 tiles
-  proven RTL-vs-gates, a single swapped mux4 input caught (104 unproven).
-  The DSP's 8x8 multiplier cone does not close RTL-vs-gates in reasonable
-  time -> run it with `LEC_GOLD=synth` (post-route vs LibreLane synthesis).
-- **Gate-level simulation** (`sim/run_gl.sh`): runs and compares, but is
-  blocked by simulation semantics, not by a known design fault: with FABulous'
-  X-scrub the outputs stay X (pessimistic gate models keep X in unused
-  in-tile routing); with the tile-internal scrub (`GL_SCRUB=full`) the
-  simulator stalls at the scrub instant (2026-10-11, real netlists, counter14).
-  Kept as tooling; the LEC is the primary netlist proof.
+Status 2026-10-11, real post-route netlists (IHP SG13G2):
+
+| check | scope | result |
+|---|---|---|
+| Netgen LVS (GDS flow) | layout == post-route netlist, all 13 tiles | clean |
+| LEC `scripts/lec_tiles.sh` | post-route == **RTL**, every configuration | **12/13 tiles proven** (incl. RegFile with loop cut points) |
+| LEC `LEC_GOLD=synth` | post-route == LibreLane synthesis | DSP proven (17144/0), RegFile proven (9407/0) |
+| gate-level sim `sim/run_gl.sh` | 3 bitstreams on the stitched netlist | blocked by X/loop semantics, not a design fault (see below) |
+
+Chain: RTL (silicon-validated on Versal) == netlist (LEC) == layout (LVS) == GDS
+(DRC clean). The one link not formally closed: the DSP's RTL == synthesis
+(its 8x8 multiplier cone does not close in equiv_simple); it rests on yosys'
+synthesis correctness plus the silicon-validated MULADD behaviour.
+
+Two lessons from getting there:
+- **Name pairing**: the router writes memory flops as `\mem[31][0]`, yosys'
+  memory pass as `\mem[31] [0]` - `splitnets` on both sides fixes it.
+- **Configurable combinational loops**: RegFile's read data (AD/BD) can be
+  routed back into its own read address, closing a loop through the memory
+  read. A loop has no unique value, SAT picks different fixed points on the
+  two sides, and the LEC reports a spurious mismatch (729/168). Found by a
+  combinational miter + `scc` on the RTL; cutting AD/BD on both sides gives
+  897/0 - equivalence for every loop-free configuration, i.e. every one
+  nextpnr can produce. The same loops are why the gate-level simulation
+  stalls once the X-scrub gives them defined values.
+- Gate-level sim: with FABulous' X-scrub outputs stay X (pessimistic gates
+  keep X in unused in-tile routing); with `GL_SCRUB=full` the simulator stalls
+  at the scrub instant (configurable loops come alive). Kept as tooling.
 
 ## Next steps
 

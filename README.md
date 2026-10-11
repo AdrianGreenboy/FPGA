@@ -348,6 +348,21 @@ Outputs: `Tile/<T>/macro/final_views/{gds,lef,nl,spef}` per tile,
 the fabric DIE_AREA, and physical mode replaces the structural timing model
 with parasitic-aware delays.
 
+## Verifying the hardened fabric
+
+- **LVS** (Netgen, in the GDS flow): layout == post-route netlist, every tile.
+- **LEC** (`scripts/lec_tiles.sh`, yosys equiv_*): post-route netlist == RTL for
+  *all* configurations. Method-checked on a yosys-mapped mock: 12/13 tiles
+  proven RTL-vs-gates, a single swapped mux4 input caught (104 unproven).
+  The DSP's 8x8 multiplier cone does not close RTL-vs-gates in reasonable
+  time -> run it with `LEC_GOLD=synth` (post-route vs LibreLane synthesis).
+- **Gate-level simulation** (`sim/run_gl.sh`): runs and compares, but is
+  blocked by simulation semantics, not by a known design fault: with FABulous'
+  X-scrub the outputs stay X (pessimistic gate models keep X in unused
+  in-tile routing); with the tile-internal scrub (`GL_SCRUB=full`) the
+  simulator stalls at the scrub instant (2026-10-11, real netlists, counter14).
+  Kept as tooling; the LEC is the primary netlist proof.
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep

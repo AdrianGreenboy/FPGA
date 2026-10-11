@@ -30,6 +30,10 @@
 # (PnR only buffers/resizes/repairs) and proves fast. RTL == synthesis for the
 # multiplier is then yosys' own synthesis correctness - stated, not proven.
 #
+# Names: the post-route netlist writes memory flops bit-blasted
+# (\mem[31][0]); yosys' memory pass on the RTL gives \mem[31] [0]. Both sides
+# go through splitnets so state elements pair up (RegFile: 593/160 -> proven).
+#
 # Interpretation: "proven" is a proof. "unproven" is NOT automatically a bug:
 # if the router renamed state-element nets, equiv_make cannot pair them and the
 # induction may be too weak. Unproven points are listed in the log; look at
@@ -66,7 +70,7 @@ gen() {  # gen <tile> -> writes $OUT/<tile>.ys
             echo "read_liberty -ignore_miss_func $LIB"
             echo "read_verilog $syn"
             echo "hierarchy -top $T"
-            echo "flatten; opt_clean"
+            echo "flatten; opt_clean; splitnets"
             echo "rename $T gold"
             echo "design -stash gold"
         else
@@ -75,13 +79,14 @@ gen() {  # gen <tile> -> writes $OUT/<tile>.ys
             for f in $rtl; do echo "read_verilog -sv $f"; done
             echo "hierarchy -top $T"
             echo "proc; memory; flatten; opt_clean"
+            echo "splitnets"     # mem[31] [0] -> mem[31][0], as the router writes it
             echo "rename $T gold"
             echo "design -stash gold"
         fi
         echo "read_liberty -ignore_miss_func $LIB"
         echo "read_verilog $NL/Tile/$T/macro/final_views/nl/$T.nl.v"
         echo "hierarchy -top $T"
-        echo "flatten; opt_clean"
+        echo "flatten; opt_clean; splitnets"
         echo "rename $T gate"
         echo "design -stash gate"
         echo "design -copy-from gold -as gold gold"

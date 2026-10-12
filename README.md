@@ -432,8 +432,8 @@ cd build/top && librelane --pdk ihp-sg13g2 config.yaml
 | KLayout DRC (IHP precheck mode) | **0** |
 | Netgen LVS (macros as black boxes) | **clean** |
 | antenna | clean |
-| setup / hold @ 20 ns, 3 corners | +4.33 ns (slow) / +0.25 ns (fast) |
-| max slew / max cap (slow corner) | 21 / 3 remaining - SRAM inputs A_BM (16, up to 0.74 ns) and A_DIN (3, up to 0.97 ns) vs 0.595 ns, the end of the SRAM liberty tables: **open** |
+| setup / hold @ 20 ns, 3 corners | +4.48 ns (slow) / +0.17 ns (fast) |
+| max slew / max cap, 3 corners | **0** / 1 (one config flop at 0.304 vs 0.300 pF, +1.4 %); every SRAM pin within its characterised range |
 
 Floorplan (`gen_top_config.py`, everything derived from the LEFs): eFPGA at
 the lower left, the SRAMs in a column to its east, each top-aligned with its
@@ -461,15 +461,22 @@ generator with the reason next to the setting):
   inside the PDK's SRAM GDS (Sdiod.d/e in COLDEC2/ROWREG6/..., Cnt.c.digibnd in
   the BITKIT cells), rules the deck itself disables in precheck mode. Magic DRC
   (3.1 M "errors", same cells) is switched off; KLayout is IHP's sign-off deck.
-- Hold (71 violations, -0.39 ns fast) and slew (279) needed the post-GRT
-  resizer and repair passes with larger margins: the pre-route estimate misses
-  the long SRAM-edge wires and the 2.8 mm clock tree.
+- Hold (71 violations, -0.39 ns fast) needed the post-GRT resizer pass with
+  larger margins (the pre-route estimate misses the 2.8 mm clock tree).
+- **SRAM pin slew/load**: the macro's liberty tables end at 0.5952 ns input
+  transition and 0.064 pF output load. Long wires along its 703 um pin edge
+  left 279 SRAM inputs beyond that; post-GRT repair with growing margins got
+  it to 35, then 21, then stalled (no room to legalise more buffers). The fix
+  was structural, in the ASIC wrapper (`rtl/asic/ihp/sram_1rw1r_32_256_8_sky130.v`):
+  one kept `sg13g2_buf_4` per data/control input and per read-data output
+  (116 per SRAM), so each macro pin sees one strong driver or one cell input
+  and the long wire sits on the std-cell side. Max slew 21 -> 0; B_DOUT load
+  0.070 -> within 0.064 pF. Functionally a plain assign in simulation
+  (`sim/run_sram_ihp.sh` still 15045/0).
 
 Not covered yet: the eFPGA has no liberty, so paths into/out of the fabric are
 untimed at this level; metal density/fill is checked on the full chip
-(padring) later; the 21 SRAM-input slews above (279 -> 35 -> 21 with growing
-repair margins; the rest needs a structural fix - per-pin drivers next to the
-SRAM edge or more free rows under it - not more margin).
+(padring) later; IHP's official precheck has not been run yet.
 
 ## Next steps
 

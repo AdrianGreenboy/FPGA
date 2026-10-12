@@ -1,4 +1,4 @@
-# HERCOSS FPGA — own eFPGA fabric, phase 0: emulation on Versal
+# agfpga — own eFPGA fabric, phase 0: emulation on Versal
 
 Goal: an ASIC SoC (own RV32IM + IP cores + **own FPGA fabric**). Phase 0 builds the
 fabric with [FABulous](https://github.com/FPGA-Research/FABulous) and runs it *inside*
@@ -412,6 +412,64 @@ FPGA model, 0 mismatches; a swapped byte-mask lane is caught. Silicon
 constraint (IHP datasheet: "no conflict handling"): reading the address being
 written in the same cycle returns undefined data - user designs must avoid it.
 ASIC builds only; the Vivado/RTL flows keep rtl/fpga.
+
+## eFPGA_top hardened on IHP SG13G2 (2026-10-12)
+
+The complete reconfigurable block - config logic (UART/bitbang, ConfigFSM,
+Frame_Data_Reg x8, Frame_Select x10), the area-optimised eFPGA macro and the
+four BlockRAMs, each on an IHP `RM_IHPSG13_2P_256x32` SRAM - hardened as one
+LibreLane run:
+
+```sh
+python3 scripts/gen_top_config.py          # writes build/top/{config.yaml,pdn_top.tcl,pin_order.cfg,src/}
+echo "RUN_MAGIC_DRC: false" >> build/top/config.yaml   # see below
+cd build/top && librelane --pdk ihp-sg13g2 config.yaml
+```
+
+| | result |
+|---|---|
+| die | 2813 x 1999 um = **5.62 mm2** (eFPGA 3.62 + 4 SRAM 0.38 + config/BRAM logic, routing) |
+| KLayout DRC (IHP precheck mode) | **0** |
+| Netgen LVS (macros as black boxes) | **clean** |
+| antenna | clean |
+| setup / hold @ 20 ns, 3 corners | +4.33 ns (slow) / +0.25 ns (fast) |
+| max slew / max cap (slow corner) | 21 / 3 remaining - SRAM inputs A_BM (16, up to 0.74 ns) and A_DIN (3, up to 0.97 ns) vs 0.595 ns, the end of the SRAM liberty tables: **open** |
+
+Floorplan (`gen_top_config.py`, everything derived from the LEFs): eFPGA at
+the lower left, the SRAMs in a column to its east, each top-aligned with its
+RAM_IO tile pair (BlockRAM k <-> tiles X9Y(8-2k)/X9Y(7-2k)) so its south-edge
+pins face a channel at the height of the fabric's RAM ports. Top-level PDN
+TopMetal1/TopMetal2: the eFPGA has VPWR/VGND only on TopMetal1 (OBS up to
+TopMetal1), so TopMetal2 straps cross it; the SRAM's Metal4 VDD!/VDDARRAY!/VSS!
+get their own macro grid (TopMetal2 -> Metal4, `pdn_top.tcl`).
+
+What it took (each one cost at least one full run - all encoded in the
+generator with the reason next to the setting):
+- **360 mm IO pins** - the same OpenROAD-master `getArea()` DBU^2 bug as in the
+  tiles, now in LibreLane's own IO placer: 183 pins crossing the die, 28k
+  global-routing overflow, 9k DRT violations after 6 h. `IO_PIN_*_LENGTH: 0.36`.
+- **PDN-0179 channels** next to the SRAMs: rows are cut at the 10 um macro
+  halo, the stdcell grid stops at the PDN halo (also 10 um) -> the rows touching
+  a SRAM had no TopMetal1 strap of one net. PDN halo 0 (`scripts/pdn_probe.sh`
+  isolated it in four 1-minute runs).
+- **Strip widths**: a strip of rows must be row-free (< 2 x 10 um halo) or
+  >= 104 um so it always contains a full VPWR/VGND strap pair (pitch 75.6 um).
+  An 18 um routing-only gap overflowed (all RAM and Config_accessC nets squeeze
+  through it); 105 um closes.
+- **DRC markers are in local cell coordinates** (KLayout deep mode). Full-mode
+  DRC reported 4172 markers - `scripts/drc_marker_cells.py` shows they are all
+  inside the PDK's SRAM GDS (Sdiod.d/e in COLDEC2/ROWREG6/..., Cnt.c.digibnd in
+  the BITKIT cells), rules the deck itself disables in precheck mode. Magic DRC
+  (3.1 M "errors", same cells) is switched off; KLayout is IHP's sign-off deck.
+- Hold (71 violations, -0.39 ns fast) and slew (279) needed the post-GRT
+  resizer and repair passes with larger margins: the pre-route estimate misses
+  the long SRAM-edge wires and the 2.8 mm clock tree.
+
+Not covered yet: the eFPGA has no liberty, so paths into/out of the fabric are
+untimed at this level; metal density/fill is checked on the full chip
+(padring) later; the 21 SRAM-input slews above (279 -> 35 -> 21 with growing
+repair margins; the rest needs a structural fix - per-pin drivers next to the
+SRAM edge or more free rows under it - not more margin).
 
 ## Next steps
 

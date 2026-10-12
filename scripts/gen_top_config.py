@@ -285,12 +285,14 @@ RUN_POST_GRT_RESIZER_TIMING: true
 # A_BM nets ~1.2 ns) and 64 fanout buffers over 0.3 pF. The pre-route repair
 # underestimates the long SRAM-edge wires, so repair again after global
 # routing, with more margin. SRAM inputs beyond the characterised slew are
-# extrapolated timing - not acceptable for a tapeout.
+# extrapolated timing (the SRAM liberty tables end at 0.5952 ns) - not
+# acceptable for a tapeout. 30/25 % -> 35 left, 45/40 % -> 21 left (16 A_BM,
+# 3 A_DIN, A_WEN/A_MEN marginal); more margin no longer helps (DPL stuck).
 RUN_POST_GRT_DESIGN_REPAIR: true
-DESIGN_REPAIR_MAX_SLEW_PCT: 30
-DESIGN_REPAIR_MAX_CAP_PCT: 30
-GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 25
-GRT_DESIGN_REPAIR_MAX_CAP_PCT: 25
+DESIGN_REPAIR_MAX_SLEW_PCT: 45
+DESIGN_REPAIR_MAX_CAP_PCT: 45
+GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 40
+GRT_DESIGN_REPAIR_MAX_CAP_PCT: 40
 PL_RESIZER_HOLD_SLACK_MARGIN: 0.25
 GRT_RESIZER_HOLD_SLACK_MARGIN: 0.2
 

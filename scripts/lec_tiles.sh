@@ -45,8 +45,19 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 FAB="$HERE/fabric"
 NL="${NLROOT:-$FAB}"
 OUT="$HERE/build/lec"; mkdir -p "$OUT"
-YOSYS="${YOSYS:-${NATIVE_YOSYS:-yosys}}"
+if [[ -z "${YOSYS:-}" ]]; then
+    # prefer a native yosys: the venv's yowasp (WASM) build is limited to a
+    # 4 GB heap and slower; the DSP tile does not fit
+    YOSYS="${NATIVE_YOSYS:-}"
+    if [[ -z "$YOSYS" ]]; then
+        while read -r y; do
+            "$y" -V 2>/dev/null | grep -q yowasp || { YOSYS="$y"; break; }
+        done < <(which -a yosys 2>/dev/null; ls /usr/local/bin/yosys /opt/*/bin/yosys 2>/dev/null)
+    fi
+    YOSYS="${YOSYS:-yosys}"
+fi
 command -v "$YOSYS" >/dev/null || [[ -x "$YOSYS" ]] || { echo "yosys not found (set YOSYS=)"; exit 1; }
+"$YOSYS" -V 2>/dev/null | grep -q yowasp && echo "WARNING: using yowasp yosys (4 GB WASM heap) - set YOSYS=/path/to/native/yosys for big tiles"
 if [[ -z "${LIB:-}" ]]; then
     for c in "$HOME/.ciel/ihp-sg13g2/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib" \
              "${FAB_PDK_ROOT:-/nonexistent}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib"; do
@@ -132,7 +143,9 @@ run() {  # run <tile>
     elif [[ -n "$s" ]]; then
         printf "%-16s UNPROVEN  %s  (see build/lec/%s.log)\n" "$T" "$s" "$T"
     else
-        printf "%-16s ERROR     (see build/lec/%s.log)\n" "$T" "$T"
+        # no equiv_status summary: yosys died mid-run (rc 137 = killed/OOM,
+        # yowasp also aborts when the 4 GB WASM heap is exhausted)
+        printf "%-16s ERROR     yosys rc=%s, no equiv_status (see build/lec/%s.log)\n" "$T" "$rc" "$T"
     fi
 }
 export -f cut_for gen run

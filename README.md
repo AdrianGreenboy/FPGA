@@ -246,11 +246,11 @@ this flow — and OpenSTA; see the script header).
 
 nextpnr-reported Fmax, same netlists as the Versal campaign:
 
-| design    | Versal emulated (silicon) | SG13G2 typ, structural | SG13G2 slow, structural | **SG13G2 slow, physical (post-layout)** |
-|-----------|---------------------------|------------------------|-------------------------|------------------------------------------|
-| counter14 | 50.5 pass / 75.9 fail     | 185.9 MHz              | 127.6 MHz               | **56.1 MHz**                             |
-| lfsr14    | 75.9 pass / 100.9 fail    | 342.5 MHz              | 242.7 MHz               | **123.2 MHz**                            |
-| blocks14p | ≥25 (not swept)           | 267.4 MHz              | 186.6 MHz               | **74.9 MHz**                             |
+| design    | Versal emulated (silicon) | SG13G2 typ, structural | SG13G2 slow, structural | SG13G2 slow, physical, no_opt (6.10 mm2) | **SG13G2 slow, physical, optimised (3.62 mm2)** |
+|-----------|---------------------------|------------------------|-------------------------|------------------------------------------|--------------------------------------------------|
+| counter14 | 50.5 pass / 75.9 fail     | 185.9 MHz              | 127.6 MHz               | 56.1 MHz                                 | **56.05 MHz**                                    |
+| lfsr14    | 75.9 pass / 100.9 fail    | 342.5 MHz              | 242.7 MHz               | 123.2 MHz                                | **123.15 MHz**                                   |
+| blocks14p | ≥25 (not swept)           | 267.4 MHz              | 186.6 MHz               | 74.9 MHz                                 | **69.64 MHz**                                    |
 
 Honest limits of these numbers:
 
@@ -276,14 +276,24 @@ MULADD/RegFile/BRAM internals have no arcs, the clock tree is ideal, and this
 is the worst corner (structural typ/slow ratio was ~1.45, so typical silicon
 should land around 80 / 175 / 110 MHz).
 
+**Optimised column (2026-10-12):** same flow on the area-optimised fabric
+(below). All 101k pip delays changed (new SPEF from `final_views`), yet
+counter14/lfsr14 are unchanged within 0.05 MHz: their critical paths are
+dominated by the bel-internal carry and LUT->FF arcs, which are the fixed
+pre-layout values. blocks14p loses 7 %. So shrinking the tiles did NOT buy
+speed (shorter switch-matrix wires are offset by the ~96 % utilisation), but
+it cost almost none either: **-41 % area for 0 / 0 / -7 % Fmax.** Until the
+bel arcs are re-extracted from the hardened LUT4AB, the first two numbers are
+only as good as those pre-layout arcs.
+
 Conclusion: worst-case user-logic Fmax on the 130 nm fabric is **55-125 MHz**
 for these designs, ~110-175 MHz typical. Notably the worst-case ASIC numbers
 land in the same range as the Versal emulation (which was limited for an
 entirely different reason - untimed emulated routing hops). A 300 MHz user
-clock is out of reach at 130 nm; the levers on this fabric are smaller tiles
-(`--optimise`: every no_opt tile is 246 x 245 um at ~64 % utilisation, so
-switch-matrix wires span the whole tile), stronger drivers on long wires, and
-pipelined user designs.
+clock is out of reach at 130 nm. Smaller tiles (`--optimise`) turned out not
+to be a speed lever (see the optimised column); what remains is stronger
+drivers on long wires, bel arcs from the hardened layout, and pipelined user
+designs.
 
 ## GDS hardening flow (FABulous -> LibreLane, IHP SG13G2)
 
@@ -325,6 +335,17 @@ terminator tiles are full-size in no_opt mode - ~1.2 mm2, a fifth of the
 fabric - so `--optimise` on them is the first area lever (4.5-5 mm2 looks
 realistic).
 
+**Area-optimised fabric (2026-10-12, current reference):**
+`run_FABulous_eFPGA_macro` explores three modes per tile (balance,
+find_min_width, find_min_height; pymoo NLP), re-hardens the winners and
+re-stitches: **1917.1 x 1889.2 um = 3.62 mm2, -41 %** vs no_opt (the
+terminators were the expected lever, the logic tiles shrank too: LUT4AB
+216.96 x 209.58 um at 96.3 % utilisation). DRC and LVS pass. Modes that found
+no legal state for a tile (e.g. N_term_single balance, DSP min_width) are
+simply excluded by the optimiser. The no_opt fabric is archived outside the
+repo; Fmax and LEC results for both are in the timing and verification
+sections.
+
 Getting there took eight toolchain fixes on Ubuntu 24.04 - all now encoded in
 `scripts/asic_gds_setup.sh` (header lists them) and the IHP sections of
 `fabric/Tile/*/gds_config.yaml`: pyosys shim, OpenROAD CMake build with
@@ -350,13 +371,14 @@ with parasitic-aware delays.
 
 ## Verifying the hardened fabric
 
-Status 2026-10-11, real post-route netlists (IHP SG13G2):
+Status 2026-10-12, real post-route netlists of the area-optimised fabric
+(the no_opt fabric of 2026-10-11 gave the same picture):
 
 | check | scope | result |
 |---|---|---|
 | Netgen LVS (GDS flow) | layout == post-route netlist, all 13 tiles | clean |
 | LEC `scripts/lec_tiles.sh` | post-route == **RTL**, every configuration | **12/13 tiles proven** (incl. RegFile with loop cut points) |
-| LEC `LEC_GOLD=synth` | post-route == LibreLane synthesis | DSP proven (17144/0), RegFile proven (9407/0) |
+| LEC `LEC_GOLD=synth` | post-route == LibreLane synthesis | no_opt: DSP proven (17144/0), RegFile proven (9407/0); optimised: DSP re-run with native yosys (yowasp runs out of its 4 GB WASM heap) |
 | gate-level sim `sim/run_gl.sh` | 3 bitstreams on the stitched netlist | blocked by X/loop semantics, not a design fault (see below) |
 
 Chain: RTL (silicon-validated on Versal) == netlist (LEC) == layout (LVS) == GDS

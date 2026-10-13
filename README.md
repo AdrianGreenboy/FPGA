@@ -478,6 +478,92 @@ Not covered yet: the eFPGA has no liberty, so paths into/out of the fabric are
 untimed at this level; metal density/fill is checked on the full chip
 (padring) later; IHP's official precheck has not been run yet.
 
+## Full chip with IHP pad ring (2026-10-13)
+
+`chip_top`: eFPGA_top inside an `sg13g2_io` pad ring - 16 bidirectional fabric
+IOs (`IOPadInOut30mA`, west), clock/resetn/UART-Rx/bitbang in (`IOPadIn`),
+ComActive/ReceiveLED out (`IOPadOut16mA`) south, 12 supply pads, bond pads,
+seal ring, metal fill. LibreLane `Chip` flow (PadRing + SealRing + Filler +
+Density steps):
+
+```sh
+python3 scripts/gen_top_config.py --chip   # writes build/chip/{config.yaml,src/chip_top.{v,sdc},pdn_top.tcl}
+cd build/chip && librelane --pdk ihp-sg13g2 config.yaml
+```
+
+| | result |
+|---|---|
+| die | 3905 x 2906 um = **11.35 mm2** (core 3119 x 2120; eFPGA 2223 x 2010 = 4.47 mm2) |
+| KLayout DRC, precheck mode, on the FILLED gds | **0** |
+| KLayout density (M2.j, M5.k, MxFil.h) | **0** |
+| LVS / antenna (OpenROAD and KLayout) | clean / clean |
+| setup / hold @ 20 ns, 3 corners | +8.42 ns / +0.167 ns |
+| max cap | **0** |
+| max slew | 16, all `pad_io*/pad` - **waiver**, see below |
+
+The accepted waiver: the IO pad liberty's `three_state_disable` arc (c2p_en ->
+pad) reports a ~3.4 ns transition at ANY load - it is the pad drifting to
+high-Z, not an edge any receiver resolves - and STA compares it against the
+library's `default_max_transition` 1.2 ns. Load- and strength-independent, so
+not fixable in the design. Every non-pad pin is clean in all 3 corners.
+
+Metal density was the hard part (IHP precheck: >= 25 % metal+fill per
+800x800 um window on every metal, M2.j global Metal2 >= 35 %, M5.k global
+Metal5 <= 60 %):
+- **`scripts/ihp_filler.py`** (KLAYOUT_FILLER_SCRIPT): the PDK filler's batch
+  defaults (1.5/2.0 um filler spacing, fixed origin) fill almost nothing in
+  the fabric's dense routing - windows inside the eFPGA sat at 17-23 %. The
+  rules allow 0.42 um (MxFil.b/c); the wrapper rewrites the distances, enables
+  per-polygon auto_origin and adds 3 shifted-origin passes for the small
+  squares on Metal2-5. Metal5 stays at 1.0 um: at 0.42 the empty chip areas
+  filled to ~50 % and broke M5.k. `scripts/window_density.py` measures any
+  window.
+- **Metal2 density straps in the 4 big tiles** (LUT4AB, RegFile, DSP, RAM_IO):
+  drawn Metal2 inside the fabric was still only ~22 %, and filler between
+  dense routing cannot close that. `Tile/include/pdn_m2_density.tcl` adds
+  vertical M2 VDD/VSS straps (1.2 um, pitch 50) per tile. Two traps, both hit:
+  1. A std cell placed UNDER a strap loses Metal1 pin access - every access
+     via lands on VPWR/VGND. Fixed: `pdn_m2_density_blk.tcl` adds placement
+     blockages over the straps (trace on pdngen) - costs ~9 % placement width.
+     Symptom to recognise it: a constant number of Metal2 shorts (FrameData vs
+     VPWR/VGND at strap x positions) that no DRT iteration reduces, until
+     FABulous' 900 s kill. `scripts/drt_probe.sh` re-runs just the detailed
+     routing without the kill and summarises the stuck violations;
+     `scripts/strap_pin_clash.py` rules pin/strap overlaps in or out.
+  2. The tile exploration data is only valid for the PDN it ran with. With
+     straps, DSP only compiled in balance mode (372x282), so the NLP had no
+     envelope and the fabric grew: 4.47 mm2 vs 3.62 before (+13 % die). To
+     retry tile sizes without the 6 h exploration:
+     `run_FABulous_eFPGA_macro --tile-opt-info <saved tile_optimisation_summary.json>`.
+- Window check on the fabric GDS before committing to a chip run: drawn-only
+  Metal2 22.2 % + tight filler cleared 25 %; the density step (runs AFTER fill,
+  before DRC) is the proof.
+
+Chip-level timing/SI fixes (all in the generator, chip mode only):
+- Hold was clean in typ but -0.05 ns in fast: the resizer only repaired the
+  default corner. `RSZ_CORNERS` lists all three explicitly.
+- X1 drivers on 0.7-1 mm single-sink nets (slow-corner slew ~2.9 ns): raising
+  repair margins did nothing (parasitic estimate too optimistic);
+  `DESIGN_REPAIR_MAX_WIRE_LENGTH`/`GRT_..._MAX_WIRE_LENGTH: 400` buffers by
+  length instead.
+- The 464 kept per-pin SRAM buffers are placed AT their pins via
+  `MANUAL_GLOBAL_PLACEMENTS` (global placement is free to drop them anywhere
+  on the net - 12 B_DOUT then drove 0.066-0.091 pF vs the 0.064 pF liberty
+  cap, unrepairable on a macro output). Ordering matters: the step is moved
+  BEFORE `RepairDesignPostGPL` (`substituting_steps`), otherwise the repair
+  buffers the pin nets first and its wire buffers stay behind when the pin
+  buffers move.
+- Pad ring: supply pads connect through `Odb.SetPowerConnections` only if
+  `chip_top.v` wires every pad's iovdd/iovss/vdd/vss under `USE_POWER_PINS`;
+  fabric IOs are 30 mA pads; `PL_TARGET_DENSITY_PCT` 45 (at 55 the post-GRT
+  hold buffers could not be legalised); Magic DRC and IllegalOverlap off
+  (expected padring overlaps; KLayout is sign-off).
+
+Still open before tapeout: IHP's official precheck on the final GDS; a
+liberty/timing model for the eFPGA macro (fabric-crossing paths are untimed);
+RV32IM integration; DSP column area recovery (re-explore with the strap
+blockages, or thin the DSP straps, if the +13 % matters for the MPW slot).
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep

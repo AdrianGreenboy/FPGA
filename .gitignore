@@ -19,3 +19,5 @@ fabric/Fabric/macro/
 fabric/gds/
 fabric/timing_cfg.json
 fabric/.FABulous/pips.backup.txt
+fabric/Tile/*/io_pin_order.yaml
+fabric/Tile/*/*_io_pin_order.yaml

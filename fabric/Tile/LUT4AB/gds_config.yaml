@@ -8,3 +8,6 @@ pdk::gf180mcuD:
 pdk::ihp-sg13g2:
   # see Tile/include/gds_config.yaml: port diodes on UserCLKo break CTS
   DIODE_ON_PORTS: "none"
+  # Metal2 density straps for the IHP precheck (M2Fil.h >= 25 %), see
+  # Tile/include/pdn_m2_density_blk.tcl; dir:: = Tile/<T>/macro/<mode>/
+  PDN_CFG: "dir::../../../include/pdn_m2_density_blk.tcl"

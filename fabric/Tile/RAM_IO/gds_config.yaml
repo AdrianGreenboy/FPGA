@@ -2,3 +2,8 @@ DIE_AREA: [0, 0, 246, 245]
 
 pdk::gf180mcuD:
   DIE_AREA: [0, 0, 320, 320]
+
+pdk::ihp-sg13g2:
+  # Metal2 density straps for the IHP precheck (M2Fil.h >= 25 %), see
+  # Tile/include/pdn_m2_density.tcl; dir:: = Tile/<T>/macro/<mode>/
+  PDN_CFG: "dir::../../../include/pdn_m2_density.tcl"

@@ -63,6 +63,12 @@ pdk::ihp-sg13g2:
 
   DIODE_CELL: "sg13g2_antennanp/A"
 
+  # Metal2 density straps (pdn_m2_density.tcl) are enabled per tile in the
+  # large interior tiles only (LUT4AB, RegFile, DSP, RAM_IO). In W_IO and the
+  # thin N/S terminators they broke Magic (W_IO: "DEF read: Pin specified
+  # without layer"; N_term_RAM_IO: SPICE extraction) and those strips hardly
+  # weigh in an 800 um density window.
+
 pdk::gf180mcuD:
   # Routing
   RT_MAX_LAYER: Metal4

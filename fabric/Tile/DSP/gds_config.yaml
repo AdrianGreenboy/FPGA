@@ -8,3 +8,8 @@ pdk::gf180mcuD:
 pdk::ihp-sg13g2:
   # see Tile/include/gds_config.yaml: port diodes on UserCLKo break CTS
   DIODE_ON_PORTS: "none"
+  # Metal2 density straps for the IHP precheck (M2Fil.h >= 25 %) plus
+  # placement blockages under them (cells under a Metal2 strap lose pin
+  # access -> unfixable M2 shorts, seen at the NLP size 372.48 x 488.04), see
+  # Tile/include/pdn_m2_density_blk.tcl; dir:: = Tile/<T>/macro/<mode>/
+  PDN_CFG: "dir::../../../include/pdn_m2_density_blk.tcl"

@@ -615,6 +615,28 @@ Two LibreLane resume traps, both hit:
    database (cap 14 at its own `56-openroad-stapostpnr`) - caught because the
    resumed run suddenly "had" 14 max-cap violations no STA had produced.
 
+The 4 `NW.d` markers (maximal runset) are closed by `scripts/nwd_patch.py`,
+applied on top of the flow's final GDS - the tapeout file is
+**`build/chip_top_tapeout.gds`** (= final/gds/chip_top.gds + 4 NWell
+rectangles), regenerate it with the script after any re-run. Root cause: at
+the SRAM macros a cell row ends 0.24 um short of its neighbour, and the
+well-tie strip of the continuing row keeps only its own 0.24 um NWell
+enclosure (the NW.e minimum) instead of the extra overlap the neighbouring
+row's NWell normally adds; NW.d (line 2038 of the maximal deck:
+`NWell_Nsram.ext_separation(NActLV, 0.31)`) flags the merged-well notch
+corner above the tie. Everything involved is PDK standard-cell geometry
+(`sg13g2_decap_8`/`sg13g2_fill_2`). Two lessons from fixing it:
+- A short patch just MOVES the marker to its own right edge - any upward
+  step of the merged well top directly above the 0.24-enclosed tie strip
+  reproduces the geometry. The strips therefore run the whole remaining row
+  segment (2790.90 to 3511.92, flush with the existing well outline, where
+  the tie stops 0.24 earlier and the corner diagonal is 0.34 >= 0.31 - the
+  same reason every normal row end is clean).
+- Fast iteration: `Layout.clip()` a window around the spots and run the
+  maximal deck on the clip (~6 min vs 36). Markers at the clip border or
+  with tiny cell-local coordinates are artifacts of sliced cells - only the
+  interior counts.
+
 Final run `RUN_2026-10-14_22-32-03` (fill: 267,009 instances, 80,898 snapped,
 0 off-grid fillers):
 
@@ -626,15 +648,12 @@ Final run `RUN_2026-10-14_22-32-03` (fill: 267,009 instances, 80,898 snapped,
 | setup / hold @ 20 ns, 3 corners | clean (+8.42 / +0.167 ns) |
 | max cap / max slew | 0 / 16 pad waivers |
 | official precheck: all rule tables | **0** |
-| official precheck: maximal runset | **4 NW.d**, nothing else (threads=8 - at 32 the compound-region workers segfault) |
+| official precheck on `chip_top_tapeout.gds` (tables, nwell, maximal) | **0** - NW.d closed by `nwd_patch.py`, see above (maximal: threads=8; at 32 it segfaults or runs >4.5 h) |
 
 Open items, documented not blocking:
-- 4 `NW.d` (NWell space to external N+Activ 0.196-0.24 vs 0.31, maximal
-  runset) at ragged row-pair ends in the SRAM halo - inspect in the GUI /
-  waiver question to IHP.
 - 48 off-grid vertices on the Metal1 pin datatype (8/2) from PDK IO cell
   pins - seen by scripts/offgrid_check.py only; no deck rule flags the pin
-  datatype (final maximal runset: the 4 NW.d above and nothing else).
+  datatype.
 - The 16 pad slew waivers (`three_state_disable`, see the 2026-10-13 section).
 
 ## Next steps

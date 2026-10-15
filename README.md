@@ -564,6 +564,79 @@ liberty/timing model for the eFPGA macro (fabric-crossing paths are untimed);
 RV32IM integration; DSP column area recovery (re-explore with the strap
 blockages, or thin the DSP straps, if the +13 % matters for the MPW slot).
 
+## Tapeout signoff: IHP precheck + manufacturing grid (2026-10-14)
+
+The official check is `run_drc.py` from IHP-Open-PDK. ciel ships the rule
+decks but not the runner: clone the repo and check out the commit that names
+the installed version (`~/.ciel/ciel/ihp-sg13g2/versions/<hash>`).
+
+```sh
+python3 $IHP_PDK/ihp-sg13g2/libs.tech/klayout/tech/drc/run_drc.py \
+  --path chip_top.gds --topcell chip_top \
+  --precheck_drc --antenna --no_recommended --mp 8 --run_dir build/precheck/final
+```
+
+What it found on the 2026-10-13 GDS and how each was closed:
+
+- **4.75 M `OffGrid.Metal*_filler`** (maximal runset). `auto_origin` anchors
+  each fill array at a raw island corner; the seal ring's sized 45-degree
+  edges have off-5nm vertices, so entire arrays inherit the offset. (KLayout
+  0.30 re-anchors per leftover island - denser than 0.28, and why the fill
+  must be validated with the tapeout machine's KLayout.) Every on-grid
+  scheme tried (fixed origins + half-pitch passes, per-island corner-snapped
+  lattices) placed ~40 % fewer medium squares and failed M2Fil.h/M3Fil.h, so
+  the fix keeps `auto_origin` and **snaps every fill instance origin to the
+  5 nm grid after filling** (<= 2.5 nm/axis; an array moves rigidly, so the
+  exact 0.42 in-array gaps survive). See `scripts/ihp_filler.py`.
+- **412 `M*Fil.c` after the first snap** (margin 0.425). All at 0.4172 um,
+  all at the pad-ring corner: against a 45-degree edge the snap subtracts up
+  to sqrt(2)*2.5 = 3.5 nm of *euclidean* distance, and the sized region's
+  chamfered corners already leave slightly less than the nominal margin
+  (0.4207 pre-snap). Margin to drawn metal is now pre-widened 0.42 -> 0.43;
+  worst case lands at ~0.4222 >= 0.42.
+- Fast re-verification without the 36-min maximal runset:
+  `scripts/offgrid_check.py` (per-layer off-grid vertex count),
+  `scripts/fil_space_check.py` (MFil.b/a1/a2 - DRM rules the open deck never
+  implements), the main deck standalone with the flow's exact flags
+  (`-rd no_recommended=true -rd precheck_drc=true`; without them it also runs
+  Sdiod/Pad.fR/recommended rules that are not sign-off), and
+  `run_drc.py --density_only`.
+
+Two LibreLane resume traps, both hit:
+
+1. `--last-run --from KLayout.Filler` chains from the run's **last** state,
+   whose GDS is already filled: the filler fills on top (instance count grows,
+   snap reports "2 of 339875") and the old fillers keep their old margins -
+   the 412 came back identically twice before this clicked. A re-fill needs
+   `--with-initial-state <pre-filler state_out.json> --from KLayout.Filler`.
+2. Point it at the right run: state metrics are snapshots, so
+   `grep design__max_cap_violation__count */state_out.json` shows which STA a
+   state carries. One candidate sealring state was from the pre-cap-fix
+   database (cap 14 at its own `56-openroad-stapostpnr`) - caught because the
+   resumed run suddenly "had" 14 max-cap violations no STA had produced.
+
+Final run `RUN_2026-10-14_22-32-03` (fill: 267,009 instances, 80,898 snapped,
+0 off-grid fillers):
+
+| | result |
+|---|---|
+| in-flow KLayout DRC (precheck flags) | **0** |
+| KLayout density | **0** |
+| LVS / antenna | clean / clean |
+| setup / hold @ 20 ns, 3 corners | clean (+8.42 / +0.167 ns) |
+| max cap / max slew | 0 / 16 pad waivers |
+| official precheck: all rule tables | **0** |
+| official precheck: maximal runset | **4 NW.d**, nothing else (threads=8 - at 32 the compound-region workers segfault) |
+
+Open items, documented not blocking:
+- 4 `NW.d` (NWell space to external N+Activ 0.196-0.24 vs 0.31, maximal
+  runset) at ragged row-pair ends in the SRAM halo - inspect in the GUI /
+  waiver question to IHP.
+- 48 off-grid vertices on the Metal1 pin datatype (8/2) from PDK IO cell
+  pins - seen by scripts/offgrid_check.py only; no deck rule flags the pin
+  datatype (final maximal runset: the 4 NW.d above and nothing else).
+- The 16 pad slew waivers (`three_state_disable`, see the 2026-10-13 section).
+
 ## Next steps
 
 - ~~Phase 0b: Vivado + silicon on TE0950~~ ✔ (2026-10-10). Remaining: clock sweep
